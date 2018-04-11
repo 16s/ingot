@@ -1,13 +1,27 @@
 import cats.{ Applicative, FlatMap }
 import cats.data.{ EitherT, StateT }
+import cats.kernel.Monoid
 import cats.syntax.all._
+import cats.instances.all._
 
 package object result {
-  type Logs = Vector[String]
+  type LogContainer[M] = Vector[M]
+  type LogMessage = String
+  type Logs = LogContainer[LogMessage]
 
-  val emptyLogs: Logs = Vector.empty[String]
+  final case class StateWithLogs[S](logs: Logs, state: S) {
+    def combine(x: LogMessage): StateWithLogs[S] =
+      copy(logs = Monoid[Logs].combine(logs, Applicative[LogContainer].pure(x)))
+    def combine(x: Logs): StateWithLogs[S] =
+      copy(logs = Monoid[Logs].combine(logs, x))
+  }
 
-  final case class StateWithLogs[S](logs: Logs, state: S)
+  object StateWithLogs {
+
+    def init[S](s: S)(implicit M: Monoid[Logs]): StateWithLogs[S] = StateWithLogs(Monoid[Logs].empty, s)
+
+  }
+
   type ActionType[F[_], S, L, R] = StateWithLogs[S] => F[(StateWithLogs[S], Either[L, R])]
   type ResultT[F[_], S, L, R] = EitherT[StateT[F, StateWithLogs[S], ?], L, R]
 
@@ -30,18 +44,24 @@ package object result {
 
     def lift[F[_], S, L, R](x: F[Either[L, R]])(implicit A: Applicative[F]): ResultT[F, S, L, R] =
       EitherT[StateT[F, StateWithLogs[S], ?], L, R](StateT(s => A.map(x)(x => (s, x))))
+
+    def log[F[_], S, L](x: LogMessage)(implicit A: Applicative[F]): ResultT[F, S, L, Unit] =
+      EitherT[StateT[F, StateWithLogs[S], ?], L, Unit](StateT(s => A.pure((s.combine(x), Either.right[L, Unit](())))))
+
+    def log[F[_], S, L](x: Logs)(implicit A: Applicative[F]): ResultT[F, S, L, Unit] =
+      EitherT[StateT[F, StateWithLogs[S], ?], L, Unit](StateT(s => A.pure(((s.combine(x), Either.right[L, Unit](()))))))
   }
 
   implicit class ResultTSyntax[F[_], S, L, R](x: ResultT[F, S, L, R]) {
     def run(st: S)(implicit F: FlatMap[F]): F[(Logs, S, Either[L, R])] =
-      F.map(x.value.run(StateWithLogs(emptyLogs, st)))({ case (StateWithLogs(logs, st), r) => (logs, st, r) })
+      F.map(x.value.run(StateWithLogs.init(st)))({ case (StateWithLogs(logs, st), r) => (logs, st, r) })
     def runA(st: S)(implicit F: FlatMap[F]): F[Either[L, R]] =
-      F.map(x.value.run(StateWithLogs(emptyLogs, st)))({ case (_, r) => r })
+      F.map(x.value.run(StateWithLogs.init(st)))({ case (_, r) => r })
     def runS(st: S)(implicit F: FlatMap[F]): F[S] =
-      F.map(x.value.run(StateWithLogs(emptyLogs, st)))({ case (StateWithLogs(_, st), _) => st })
+      F.map(x.value.run(StateWithLogs.init(st)))({ case (StateWithLogs(_, st), _) => st })
     def runL(st: S)(implicit F: FlatMap[F]): F[Logs] =
-      F.map(x.value.run(StateWithLogs(emptyLogs, st)))({ case (StateWithLogs(logs, _), _) => logs })
+      F.map(x.value.run(StateWithLogs.init(st)))({ case (StateWithLogs(logs, _), _) => logs })
     def runAL(st: S)(implicit F: FlatMap[F]): F[(Logs, Either[L, R])] =
-      F.map(x.value.run(StateWithLogs(emptyLogs, st)))({ case (StateWithLogs(logs, _), r) => (logs, r) })
+      F.map(x.value.run(StateWithLogs.init(st)))({ case (StateWithLogs(logs, _), r) => (logs, r) })
   }
 }
