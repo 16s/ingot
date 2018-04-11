@@ -18,4 +18,6 @@ val settings = Seq(
 		wartremoverErrors ++= Warts.unsafe,
 		scalariformPreferences := scalariformPreferences.value)
 
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6")
+
 lazy val result = (project in file(".")).settings(settings)
