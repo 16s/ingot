@@ -9,7 +9,7 @@ val dependencies = Seq("org.typelevel" %% "cats-core" % catsVersion,
 			"org.scalatest" %% "scalatest" % scalaTestVersion % "test")
 
 val settings = Seq(
-		name := "return",
+		name := "result",
 		version := "net.16shells",
 		scalaVersion := "2.12.5",
 		version := "0.0.1-SNAPSHOT",
