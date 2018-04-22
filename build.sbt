@@ -1,5 +1,5 @@
 
-val catsVersion = "1.0.1"
+val catsVersion = "1.1.0"
 val scalaTestVersion = "3.0.5"
 
 val dependencies = Seq("org.typelevel" %% "cats-core" % catsVersion,
@@ -12,7 +12,7 @@ val settings = Seq(
 		name := "result",
 		organization := "net.16shells",
 		scalaVersion := "2.12.5",
-		version := "0.0.1",
+		version := "0.0.2",
 		scalacOptions ++= Seq("-Ypartial-unification"), //, "-Xlog-implicits"
 		libraryDependencies ++= dependencies,
 		wartremoverErrors ++= Warts.unsafe,
