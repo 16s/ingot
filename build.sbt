@@ -10,7 +10,7 @@ val dependencies = Seq("org.typelevel" %% "cats-core" % catsVersion,
 
 val settings = Seq(
 		name := "result",
-		version := "net.16shells",
+		organization := "net.16shells",
 		scalaVersion := "2.12.5",
 		version := "0.0.1",
 		scalacOptions ++= Seq("-Ypartial-unification"), //, "-Xlog-implicits"
