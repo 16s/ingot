@@ -43,4 +43,29 @@ class ResultTSpec extends FlatSpec {
     val result: SimpleState = res.runS(SimpleState(1))
     result should equal(SimpleState(5))
   }
+
+  trait DbConnection {
+    def connNum: Int
+  }
+  trait HttpClient {
+    def run: String => String
+  }
+
+  private def getIdFromDb(id: Int): ResultT[Id, DbConnection, String, String] = ResultT.pure(s"id:${id.toString}")
+
+  private def getDataFromApi(url: String): ResultT[Id, HttpClient, String, String] = ResultT.pure(s"url:$url")
+
+  private def getFromDbAndApi: ResultT[Id, (DbConnection, HttpClient), String, String] = {
+    for {
+      id <- getIdFromDb(5).transformS[(DbConnection, HttpClient)](_._1, { case (x, y) => (y, x._2) })
+      url <- getDataFromApi("http://localhost").transformS[(DbConnection, HttpClient)](_._2, { case (x, y) => (x._1, y) })
+    } yield s"$id$url"
+  }
+
+  it should "correctly combine multiple states" in {
+    val st = (new DbConnection { override val connNum = 5 }, new HttpClient { override def run = identity })
+
+    val result = getFromDbAndApi.runA(st)
+    result should equal(Right("id:5url:http://localhost"))
+  }
 }
