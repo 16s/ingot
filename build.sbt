@@ -19,7 +19,6 @@ val resultStateDependencies = sharedDependencies ++ Seq(
 val sharedSettings = Seq(
 	organization := "me.16s",
 	scalaVersion := "2.12.6",
-	version := "0.0.3",
 	scalacOptions ++= Seq("-Ypartial-unification", "-feature", "-deprecation", "-unchecked"),
 	wartremoverErrors ++= Warts.unsafe,
 	scalariformPreferences := scalariformPreferences.value,
