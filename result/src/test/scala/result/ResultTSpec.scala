@@ -19,6 +19,7 @@ package result
 import cats.Id
 import org.scalatest._
 import Matchers._
+import cats.syntax.either._
 
 final case class SimpleState(id: Int)
 
@@ -60,6 +61,19 @@ class ResultTSpec extends FlatSpec {
     } yield st.id
     val result: SimpleState = res.runS(SimpleState(1))
     result should equal(SimpleState(5))
+  }
+
+  it should "correctly use inspects" in {
+    val res: SimpleTestResult = for {
+      _ <- ResultT.inspect[Id, SimpleState, String, String]((st: SimpleState) => Either.right[String, String](""))
+      _ <- ResultT.inspectE((st: SimpleState) => st.id)
+      _ <- ResultT.inspectF[Id, SimpleState, String, Int]((st: SimpleState) => Either.right[String, Int](st.id))
+      _ <- ResultT.inspectL((st: SimpleState) => (Vector.empty[String], Either.right[String, String]("")))
+      _ <- ResultT.inspectEL((st: SimpleState) => (Vector.empty[String], ""))
+      _ <- ResultT.inspectFL[Id, SimpleState, String, String]((st: SimpleState) => (Vector.empty[String], Either.right[String, String]("")))
+    } yield 5
+    val result: Either[String, Int] = res.runA(SimpleState(1))
+    result should equal(Either.right[String, Int](5))
   }
 
   trait DbConnection {

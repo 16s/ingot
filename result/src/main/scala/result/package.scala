@@ -34,9 +34,7 @@ package object result {
   }
 
   object StateWithLogs {
-
     def init[S](s: S)(implicit M: Monoid[Logs]): StateWithLogs[S] = StateWithLogs(Monoid[Logs].empty, s)
-
   }
 
   type ActionType[F[_], S, L, R] = StateWithLogs[S] => F[(StateWithLogs[S], Either[L, R])]
@@ -91,6 +89,30 @@ package object result {
 
     def modifyF[F[_], S, L](f: S => F[S])(implicit A: Applicative[F]): ResultT[F, S, L, Unit] =
       apply[F, S, L, Unit](s => A.map(f(s.state))(x => (s.copy(state = x), Either.right[L, Unit](()))))
+
+    def inspect[F[_], S, L, R](f: S => Either[L, R])(implicit A: Applicative[F]): ResultT[F, S, L, R] =
+      apply[F, S, L, R](s => A.pure((s, f(s.state))))
+
+    def inspectE[F[_], S, L, R](f: S => R)(implicit A: Applicative[F]): ResultT[F, S, L, R] =
+      apply[F, S, L, R](s => A.pure((s, Either.right[L, R](f(s.state)))))
+
+    def inspectF[F[_], S, L, R](f: S => F[Either[L, R]])(implicit A: Applicative[F]): ResultT[F, S, L, R] =
+      apply[F, S, L, R](s => A.map(f(s.state))(r => (s, r)))
+
+    def inspectL[F[_], S, L, R](f: S => (Logs, Either[L, R]))(implicit A: Applicative[F]): ResultT[F, S, L, R] =
+      apply[F, S, L, R](s => A.pure {
+        val (logs, r) = f(s.state)
+        (s.combine(logs), r)
+      })
+
+    def inspectEL[F[_], S, L, R](f: S => (Logs, R))(implicit A: Applicative[F]): ResultT[F, S, L, R] =
+      apply[F, S, L, R](s => A.pure {
+        val (logs, r) = f(s.state)
+        (s.combine(logs), Either.right[L, R](r))
+      })
+
+    def inspectFL[F[_], S, L, R](f: S => F[(Logs, Either[L, R])])(implicit A: Applicative[F]): ResultT[F, S, L, R] =
+      apply[F, S, L, R](s => A.map(f(s.state)) { case (logs, r) => (s.combine(logs), r) })
   }
 
   implicit class ResultTSyntax[F[_], S, L, R](x: ResultT[F, S, L, R]) {
