@@ -24,6 +24,7 @@ val sharedSettings = Seq(
 	scalariformPreferences := scalariformPreferences.value,
 	scalacOptions in (Compile,doc) ++= Seq("-groups", "-implicits"),
 	crossScalaVersions := Seq("2.11.11", "2.12.6"),
+  releaseCrossBuild := true,
   publishTo := {
     val path = "/repo/"
     if (isSnapshot.value)
