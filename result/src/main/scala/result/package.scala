@@ -3,6 +3,7 @@ import cats.data.{ EitherT, StateT }
 import cats.kernel.Monoid
 import cats.syntax.all._
 import cats.instances.all._
+import scala.language.higherKinds
 
 package object result {
   type LogContainer[M] = Vector[M]

@@ -6,19 +6,21 @@ import cats.Id
 import result._
 import shapeless._
 
+trait DbConnection {
+  def connNum: Int
+}
+
+trait HttpClient {
+  def run: String => String
+}
+
+final case class CombinedState(c: DbConnection, h: HttpClient)
+
 class StateSpec extends FlatSpec {
-  trait DbConnection {
-    def connNum: Int
-  }
-  trait HttpClient {
-    def run: String => String
-  }
 
   private def getIdFromDb(id: Int): ResultT[Id, DbConnection, String, String] = ResultT.pure(s"id:${id.toString}")
 
   private def getDataFromApi(url: String): ResultT[Id, HttpClient, String, String] = ResultT.pure(s"url:$url")
-
-  private final case class CombinedState(c: DbConnection, h: HttpClient)
 
   private def getFromDbAndApi: ResultT[Id, DbConnection :: HttpClient :: HNil, String, String] = {
     for {

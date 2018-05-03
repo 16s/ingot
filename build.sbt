@@ -1,26 +1,30 @@
 
 val catsVersion = "1.1.0"
 val scalaTestVersion = "3.0.5"
+val sharedDependencies = Seq()
 
-val resultDependencies = Seq("org.typelevel" %% "cats-core" % catsVersion,
-			"org.typelevel" %% "cats-kernel" % catsVersion,
-			"org.typelevel" %% "cats-macros" % catsVersion,
-			"org.scalactic" %% "scalactic" % scalaTestVersion,
-			"org.scalatest" %% "scalatest" % scalaTestVersion % "test",
+val resultDependencies = sharedDependencies ++ Seq(
+	"org.typelevel" %% "cats-core" % catsVersion,
+	"org.typelevel" %% "cats-kernel" % catsVersion,
+	"org.typelevel" %% "cats-macros" % catsVersion,
+	"org.scalactic" %% "scalactic" % scalaTestVersion,
+	"org.scalatest" %% "scalatest" % scalaTestVersion % "test",
 	compilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"))
 
-val resultStateDependencies = Seq(
+val resultStateDependencies = sharedDependencies ++ Seq(
 	"com.chuusai" %% "shapeless" % "2.3.3",
 	"org.scalactic" %% "scalactic" % scalaTestVersion,
 	"org.scalatest" %% "scalatest" % scalaTestVersion % "test")
 
 val sharedSettings = Seq(
-		organization := "net.16shells",
-		scalaVersion := "2.12.5",
-		version := "0.0.3",
-		scalacOptions ++= Seq("-Ypartial-unification"), //, "-Xlog-implicits"
-		wartremoverErrors ++= Warts.unsafe,
-		scalariformPreferences := scalariformPreferences.value)
+	organization := "net.16shells",
+	scalaVersion := "2.12.6",
+	version := "0.0.3",
+	scalacOptions ++= Seq("-Ypartial-unification", "-feature", "-deprecation", "-unchecked"),
+	wartremoverErrors ++= Warts.unsafe,
+	scalariformPreferences := scalariformPreferences.value,
+	scalacOptions in (Compile,doc) ++= Seq("-groups", "-implicits"),
+	crossScalaVersions := Seq("2.11.11", "2.12.6"))
 
 lazy val resultLib = (project in file("result")).settings(sharedSettings, Seq(
 	name := "result",

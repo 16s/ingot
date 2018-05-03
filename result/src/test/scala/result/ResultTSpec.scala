@@ -4,11 +4,13 @@ import cats.Id
 import org.scalatest._
 import Matchers._
 
+final case class SimpleState(id: Int)
+
+object SimpleState {
+  val empty = SimpleState(0)
+}
+
 class ResultTSpec extends FlatSpec {
-  final case class SimpleState(id: Int)
-  object SimpleState {
-    val empty = SimpleState(0)
-  }
   type SimpleTestResult = ResultT[Id, SimpleState, String, Int]
   "ResultT" should "correctly map" in {
     val res: SimpleTestResult = for {

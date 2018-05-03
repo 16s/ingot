@@ -1,5 +1,6 @@
 package result
 import cats.Functor
+import scala.language.higherKinds
 import shapeless._
 import shapeless.ops.hlist._
 
