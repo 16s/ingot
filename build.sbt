@@ -17,7 +17,7 @@ val resultStateDependencies = sharedDependencies ++ Seq(
 	"org.scalatest" %% "scalatest" % scalaTestVersion % "test")
 
 val sharedSettings = Seq(
-	organization := "net.16shells",
+	organization := "me.16s",
 	scalaVersion := "2.12.6",
 	version := "0.0.3",
 	scalacOptions ++= Seq("-Ypartial-unification", "-feature", "-deprecation", "-unchecked"),
