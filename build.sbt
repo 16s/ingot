@@ -24,7 +24,14 @@ val sharedSettings = Seq(
 	wartremoverErrors ++= Warts.unsafe,
 	scalariformPreferences := scalariformPreferences.value,
 	scalacOptions in (Compile,doc) ++= Seq("-groups", "-implicits"),
-	crossScalaVersions := Seq("2.11.11", "2.12.6"))
+	crossScalaVersions := Seq("2.11.11", "2.12.6"),
+  publishTo := {
+    val path = "/repo/"
+    if (isSnapshot.value)
+      Some(Resolver.file("file", new File(Path.userHome.absolutePath + path + "/snapshot")))
+    else
+      Some(Resolver.file("file", new File(Path.userHome.absolutePath + path + "/release")))
+  })
 
 lazy val resultLib = (project in file("result")).settings(sharedSettings, Seq(
 	name := "result",
@@ -35,6 +42,6 @@ lazy val resultState = (project in file("state")).dependsOn(resultLib).settings(
 	libraryDependencies ++= resultStateDependencies
 ))
 
-lazy val results = (project in file(".")).aggregate(resultLib, resultState)
+lazy val results = (project in file(".")).settings(sharedSettings, Seq(publishArtifact := false)).aggregate(resultLib, resultState)
 
 
