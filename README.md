@@ -1,17 +1,36 @@
-# A simple return type to manage dependencies and logging
+### A simple return type to manage dependencies and logging
 
-```sh
-git clone git@github.com:16s/result.git
-```
+This is a tiny library with the primary goal to create a standard return type that handles
+errors and logging (for motivation see my [ny-scala talk](https://youtu.be/xoJcLDOa98M)) 
 
-Usage:
+
+#### Usage
+
+First, import the library
+
 ```scala
-scala> import result._
 import result._
-
-scala> import scala.concurrent.Future
 import scala.concurrent.Future
-
-scala> def myFunc(): ResultT[Future, Unit, String, String] = ???
-myFunc: ()result.ResultT[scala.concurrent.Future,Unit,String,String]
 ```
+
+create an error type (or use an existing one), a simple ADT should do it 
+
+```scala
+sealed trait MyError
+final case class ConnectionError(msg: String) extends MyError
+final case class DataConsistencyError(id: Int) extends MyError 
+```
+
+if you need a state, create it, otherwise just use `Unit`
+
+```scala
+final case class MyState(connections: Int)
+```
+
+now you can create your own Return type
+
+```scala
+type MyReturn[A] = ResultT[Future, MyState, MyError, A]
+```
+
+more to follow...
