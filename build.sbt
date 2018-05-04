@@ -20,14 +20,14 @@ val resultStateDependencies = sharedDependencies ++ Seq(
 val sharedSettings = Seq(
   homepage := Some(url("https://16s.github.io/result")),
   description := "A simple library to handle effects, logs, errors and state",
-	organization := "me.16s",
+  organization := "me.16s",
   organizationHomepage := Some(url("https://16s.github.io")),
   organizationName := "Tamas Neltz",
-	scalaVersion := "2.12.6",
-	scalacOptions ++= Seq("-Ypartial-unification", "-feature", "-deprecation", "-unchecked"),
-	scalariformPreferences := scalariformPreferences.value,
-	scalacOptions in (Compile,doc) ++= Seq("-groups", "-implicits"),
-	crossScalaVersions := Seq("2.11.11", "2.12.6"),
+  scalaVersion := "2.12.6",
+  scalacOptions ++= Seq("-Ypartial-unification", "-feature", "-deprecation", "-unchecked"),
+  scalariformPreferences := scalariformPreferences.value,
+  scalacOptions in (Compile,doc) ++= Seq("-groups", "-implicits"),
+  crossScalaVersions := Seq("2.11.11", "2.12.6"),
   releaseCrossBuild := true,
   pomIncludeRepository := { _ => false },
   scmInfo := Some(
@@ -45,6 +45,7 @@ val sharedSettings = Seq(
     )
   ),
   publishMavenStyle := true,
+  licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
   publishTo := {
     val nexus = "https://oss.sonatype.org/"
     if (isSnapshot.value)
