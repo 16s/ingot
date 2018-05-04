@@ -29,12 +29,28 @@ val sharedSettings = Seq(
 	scalacOptions in (Compile,doc) ++= Seq("-groups", "-implicits"),
 	crossScalaVersions := Seq("2.11.11", "2.12.6"),
   releaseCrossBuild := true,
+  pomIncludeRepository := { _ => false },
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/16s/result"),
+      "scm:git@github.com:16s/result.git"
+    )
+  ),
+  developers := List(
+    Developer(
+      id    = "herczog",
+      name  = "Tamas Neltz",
+      email = "tamas@16s.me",
+      url   = url("https://github.com/16s")
+    )
+  ),
+  publishMavenStyle := true,
   publishTo := {
-    val path = "/repo/"
+    val nexus = "https://oss.sonatype.org/"
     if (isSnapshot.value)
-      Some(Resolver.file("file", new File(Path.userHome.absolutePath + path + "/snapshot")))
+      Some("snapshots" at nexus + "content/repositories/snapshots")
     else
-      Some(Resolver.file("file", new File(Path.userHome.absolutePath + path + "/release")))
+      Some("releases"  at nexus + "service/local/staging/deploy/maven2")
   })
 
 val codeSettings = sharedSettings ++ Seq(
@@ -62,7 +78,7 @@ val micrositeSettings = Seq(
   micrositeBaseUrl := "/result")
 
 lazy val docs = (project in file("docs"))
-  .settings(sharedSettings, micrositeSettings).dependsOn(resultLib, resultState)
+  .settings(sharedSettings, micrositeSettings, Seq(publishArtifact := false)).dependsOn(resultLib, resultState)
   .enablePlugins(MicrositesPlugin)
 
 lazy val readme = (project in file("readme"))
