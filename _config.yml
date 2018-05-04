@@ -1,0 +1,11 @@
+name: result
+baseurl: ''
+description: A simple library to handle effects, logs, errors and state
+highlighter: rouge
+docs: true
+collections:
+  tut:
+    output: true
+version: 0.0.8
+org: Tamas Neltz
+markdown: kramdown
