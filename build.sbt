@@ -46,6 +46,7 @@ val sharedSettings = Seq(
   ),
   publishMavenStyle := true,
   licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
   publishTo := {
     val nexus = "https://oss.sonatype.org/"
     if (isSnapshot.value)
