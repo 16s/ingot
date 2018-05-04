@@ -1,5 +1,5 @@
 name: result
-baseurl: ''
+baseurl: /result
 description: A simple library to handle effects, logs, errors and state
 highlighter: rouge
 docs: true
