@@ -65,9 +65,14 @@ lazy val docs = (project in file("docs"))
   .settings(sharedSettings, micrositeSettings).dependsOn(resultLib, resultState)
   .enablePlugins(MicrositesPlugin)
 
+lazy val readme = (project in file("readme"))
+  .dependsOn(resultLib, resultState)
+  .settings(sharedSettings, Seq(publishArtifact := false), tutTargetDirectory := file("."))
+  .enablePlugins(TutPlugin)
+
 lazy val result = (project in file("."))
   .settings(sharedSettings, Seq(publishArtifact := false), tutTargetDirectory := file("."))
-  .aggregate(resultLib, resultState, docs)
-  .enablePlugins(TutPlugin)
+  .aggregate(resultLib, resultState, docs, readme)
+
 
 
