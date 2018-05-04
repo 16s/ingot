@@ -1,3 +1,4 @@
+import microsites.CdnDirectives
 
 val catsVersion = "1.1.0"
 val scalaTestVersion = "3.0.5"
@@ -17,10 +18,13 @@ val resultStateDependencies = sharedDependencies ++ Seq(
 	"org.scalatest" %% "scalatest" % scalaTestVersion % "test")
 
 val sharedSettings = Seq(
+  homepage := Some(url("https://16s.github.io/result")),
+  description := "A simple library to handle effects, logs, errors and state",
 	organization := "me.16s",
+  organizationHomepage := Some(url("https://16s.github.io")),
+  organizationName := "Tamas Neltz",
 	scalaVersion := "2.12.6",
 	scalacOptions ++= Seq("-Ypartial-unification", "-feature", "-deprecation", "-unchecked"),
-	wartremoverErrors ++= Warts.unsafe,
 	scalariformPreferences := scalariformPreferences.value,
 	scalacOptions in (Compile,doc) ++= Seq("-groups", "-implicits"),
 	crossScalaVersions := Seq("2.11.11", "2.12.6"),
@@ -33,15 +37,37 @@ val sharedSettings = Seq(
       Some(Resolver.file("file", new File(Path.userHome.absolutePath + path + "/release")))
   })
 
-lazy val resultLib = (project in file("result")).settings(sharedSettings, Seq(
+val codeSettings = sharedSettings ++ Seq(
+  wartremoverErrors ++= Warts.unsafe
+)
+
+lazy val resultLib = (project in file("result")).settings(codeSettings, Seq(
 	name := "result",
-	libraryDependencies ++= resultDependencies)).enablePlugins()
+	libraryDependencies ++= resultDependencies,
+  tutTargetDirectory := file("result"))).enablePlugins(TutPlugin)
 
-lazy val resultState = (project in file("state")).dependsOn(resultLib).settings(sharedSettings, Seq(
+lazy val resultState = (project in file("state")).dependsOn(resultLib).settings(codeSettings, Seq(
 	name := "result-state",
-	libraryDependencies ++= resultStateDependencies
-))
+	libraryDependencies ++= resultStateDependencies,
+  tutTargetDirectory := file("state"))).enablePlugins(TutPlugin)
 
-lazy val results = (project in file(".")).settings(sharedSettings, Seq(publishArtifact := false)).aggregate(resultLib, resultState)
+val micrositeSettings = Seq(
+  micrositeName := "result",
+  micrositeGithubOwner := "16s",
+  micrositeGithubRepo := "result",
+  micrositeGithubToken := sys.env.get("GITHUB_TOKEN"),
+  micrositePushSiteWith := GitHub4s,
+  micrositeHighlightTheme := "atelier-dune-light",
+  micrositeGitterChannel := false,
+  micrositeBaseUrl := "/result")
+
+lazy val docs = (project in file("docs"))
+  .settings(sharedSettings, micrositeSettings).dependsOn(resultLib, resultState)
+  .enablePlugins(MicrositesPlugin)
+
+lazy val result = (project in file("."))
+  .settings(sharedSettings, Seq(publishArtifact := false), tutTargetDirectory := file("."))
+  .aggregate(resultLib, resultState, docs)
+  .enablePlugins(TutPlugin)
 
 
