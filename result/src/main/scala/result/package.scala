@@ -16,7 +16,6 @@
 
 import cats.{ Applicative, FlatMap, Functor }
 import cats.data.{ EitherT, StateT }
-import cats.kernel.Monoid
 import cats.syntax.all._
 import cats.instances.all._
 import scala.language.higherKinds
@@ -25,17 +24,6 @@ package object result {
   type LogContainer[M] = Vector[M]
   type LogMessage = String
   type Logs = LogContainer[LogMessage]
-
-  final case class StateWithLogs[+S](logs: Logs, state: S) {
-    def combine(x: LogMessage): StateWithLogs[S] =
-      copy(logs = Monoid[Logs].combine(logs, Applicative[LogContainer].pure(x)))
-    def combine(x: Logs): StateWithLogs[S] =
-      copy(logs = Monoid[Logs].combine(logs, x))
-  }
-
-  object StateWithLogs {
-    def init[S](s: S)(implicit M: Monoid[Logs]): StateWithLogs[S] = StateWithLogs(Monoid[Logs].empty, s)
-  }
 
   type ActionType[F[_], S, L, R] = StateWithLogs[S] => F[(StateWithLogs[S], Either[L, R])]
   type ResultT[F[_], S, L, R] = EitherT[StateT[F, StateWithLogs[S], ?], L, R]
