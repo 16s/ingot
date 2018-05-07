@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-import cats.{ Applicative, FlatMap, Functor }
+import cats.{ Applicative, FlatMap, Functor, ~> }
 import cats.data.{ EitherT, StateT }
 import cats.syntax.all._
 import cats.instances.all._
+
 import scala.language.higherKinds
 
 package object result {
@@ -118,6 +119,9 @@ package object result {
 
     def runAL(st: S)(implicit F: FlatMap[F]): F[(Logs, Either[L, R])] =
       F.map(x.value.run(StateWithLogs.init(st)))({ case (StateWithLogs(logs, _), r) => (logs, r) })
+
+    def withMonad[G[_]](f: F ~> G)(implicit F: FlatMap[F], A: Applicative[G]): ResultT[G, S, L, R] =
+      ResultT[G, S, L, R](st => f(x.value.run(st)))
 
     def transformS[SS](
       f: SS => S,

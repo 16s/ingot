@@ -20,6 +20,7 @@ import cats.Id
 import org.scalatest._
 import Matchers._
 import cats.syntax.either._
+import cats.~>
 
 final case class SimpleState(id: Int)
 
@@ -99,5 +100,16 @@ class ResultTSpec extends FlatSpec {
 
     val result = getFromDbAndApi.runA(st)
     result should equal(Right("id:5url:http://localhost"))
+  }
+
+  it should "correctly transforms between monads" in {
+    import cats.instances.all._
+
+    val idToList = new (List ~> Option) {
+      def apply[A](x: List[A]): Option[A] = x.headOption
+    }
+    val lst = ResultT.right[List, Unit, String, Int](List(1, 2, 3))
+    val opt = lst.withMonad(idToList)
+    opt.runA(()) should equal(Some(Right(1)))
   }
 }
