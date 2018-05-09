@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package result.state
-
-import result._
-import cats.Functor
+package result
 
 trait CompositeState[S, SS] {
   def inspect(ss: SS): S
   def update(ss: SS, s: S): SS
+}
 
-  def getTransform[F[_], L, R](x: ResultT[F, S, L, R])(implicit F: Functor[F]): ResultT[F, SS, L, R] = {
-    x.transformS(inspect, update)
+object CompositeState {
+  def apply[S, SS](implicit gen: CompositeState[S, SS]): CompositeState[S, SS] = gen
+
+  def instance[S, SS](f: SS => S, g: (SS, S) => SS): CompositeState[S, SS] = new CompositeState[S, SS] {
+    override def inspect(ss: SS): S = f(ss)
+    override def update(ss: SS, s: S): SS = g(ss, s)
   }
 }

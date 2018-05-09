@@ -80,9 +80,16 @@ class ResultTSpec extends FlatSpec {
   trait DbConnection {
     def connNum: Int
   }
+
   trait HttpClient {
     def run: String => String
   }
+
+  implicit val dbCompositeState =
+    CompositeState.instance[DbConnection, (DbConnection, HttpClient)](_._1, { case (x, y) => (y, x._2) })
+
+  implicit val httpCompositeState =
+    CompositeState.instance[HttpClient, (DbConnection, HttpClient)](_._2, { case (x, y) => (x._1, y) })
 
   private def getIdFromDb(id: Int): ResultT[Id, DbConnection, String, String] = ResultT.pure(s"id:${id.toString}")
 
@@ -90,8 +97,8 @@ class ResultTSpec extends FlatSpec {
 
   private def getFromDbAndApi: ResultT[Id, (DbConnection, HttpClient), String, String] = {
     for {
-      id <- getIdFromDb(5).transformS[(DbConnection, HttpClient)](_._1, { case (x, y) => (y, x._2) })
-      url <- getDataFromApi("http://localhost").transformS[(DbConnection, HttpClient)](_._2, { case (x, y) => (x._1, y) })
+      id <- getIdFromDb(5).transformS[(DbConnection, HttpClient)]
+      url <- getDataFromApi("http://localhost").transformS[(DbConnection, HttpClient)]
     } yield s"$id$url"
   }
 
@@ -105,11 +112,11 @@ class ResultTSpec extends FlatSpec {
   it should "correctly transforms between monads" in {
     import cats.instances.all._
 
-    val idToList = new (List ~> Option) {
+    implicit val idToList = new (List ~> Option) {
       def apply[A](x: List[A]): Option[A] = x.headOption
     }
     val lst = ResultT.right[List, Unit, String, Int](List(1, 2, 3))
-    val opt = lst.withMonad(idToList)
+    val opt = lst.withMonad[Option]
     opt.runA(()) should equal(Some(Right(1)))
   }
 }

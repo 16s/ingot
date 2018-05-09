@@ -120,14 +120,12 @@ package object result {
     def runAL(st: S)(implicit F: FlatMap[F]): F[(Logs, Either[L, R])] =
       F.map(x.value.run(StateWithLogs.init(st)))({ case (StateWithLogs(logs, _), r) => (logs, r) })
 
-    def withMonad[G[_]](f: F ~> G)(implicit F: FlatMap[F], A: Applicative[G]): ResultT[G, S, L, R] =
-      ResultT[G, S, L, R](st => f(x.value.run(st)))
+    def withMonad[G[_]](implicit F: FlatMap[F], A: Applicative[G], K: F ~> G): ResultT[G, S, L, R] =
+      ResultT[G, S, L, R](st => K(x.value.run(st)))
 
-    def transformS[SS](
-      f: SS => S,
-      g: (SS, S) => SS)(implicit F: Functor[F]): ResultT[F, SS, L, R] =
+    def transformS[SS](implicit F: Functor[F], CS: CompositeState[S, SS]): ResultT[F, SS, L, R] =
       EitherT[StateT[F, StateWithLogs[SS], ?], L, R](x.value.transformS(
-        { case StateWithLogs(logs, state) => StateWithLogs(logs, f(state)) },
-        { case (StateWithLogs(_, ss), StateWithLogs(logs, s)) => StateWithLogs(logs, g(ss, s)) }))
+        { case StateWithLogs(logs, state) => StateWithLogs(logs, CS.inspect(state)) },
+        { case (StateWithLogs(_, ss), StateWithLogs(logs, s)) => StateWithLogs(logs, CS.update(ss, s)) }))
   }
 }

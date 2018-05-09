@@ -21,6 +21,11 @@ import Matchers._
 import cats.Id
 import result._
 import shapeless._
+import scala.concurrent.ExecutionContext.Implicits.global
+import cats.instances.future._
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 trait DbConnection {
   def connNum: Int
@@ -40,15 +45,15 @@ class StateSpec extends FlatSpec {
 
   private def getFromDbAndApi: ResultT[Id, DbConnection :: HttpClient :: HNil, String, String] = {
     for {
-      id <- getIdFromDb(5).withState[DbConnection :: HttpClient :: HNil]
-      url <- getDataFromApi("http://localhost").withState[DbConnection :: HttpClient :: HNil]
+      id <- getIdFromDb(5).transformS[DbConnection :: HttpClient :: HNil]
+      url <- getDataFromApi("http://localhost").transformS[DbConnection :: HttpClient :: HNil]
     } yield s"$id$url"
   }
 
   private def getFromDbAndApiWithCombinedState: ResultT[Id, CombinedState, String, String] = {
     for {
-      id <- getIdFromDb(5).withState[CombinedState]
-      url <- getDataFromApi("http://localhost").withState[CombinedState]
+      id <- getIdFromDb(5).transformS[CombinedState]
+      url <- getDataFromApi("http://localhost").transformS[CombinedState]
     } yield s"$id$url"
   }
 
@@ -64,6 +69,12 @@ class StateSpec extends FlatSpec {
 
     val result = getFromDbAndApiWithCombinedState.runA(st)
     result should equal(Right("id:5url:http://localhost"))
+  }
+
+  it should "properly call invoke implementation" in {
+    import Implementation._
+    val result = Await.result(TestService.run[ParserState, ClientState]("a").runA((ParserState(), ClientState())), Duration.Inf)
+    result should equal(Right(Response("url:parsed:a")))
   }
 
 }
