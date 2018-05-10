@@ -64,9 +64,9 @@ final case class ValidatedMessage(msg: String, checkSum: Int)
 def service(): Clay[MyError, ValidatedMessage] = {
     for {
     resp <- getResponse()
-    _ <- Clay.log("Loaded the response")
+    _ <- Clay.log("Loaded the response".asInfo)
     cs <- responseCheckSum(resp)
-    _ <- Clay.log("Got the checksum")
+    _ <- Clay.log("Got the checksum".asDebug)
     } yield ValidatedMessage(resp, cs)
 }
 ```

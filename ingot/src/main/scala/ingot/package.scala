@@ -23,7 +23,6 @@ import scala.language.higherKinds
 
 package object ingot {
   type LogContainer[M] = Vector[M]
-  type LogMessage = String
   type Logs = LogContainer[LogMessage]
 
   type ActionType[F[_], S, L, R] = StateWithLogs[S] => F[(StateWithLogs[S], Either[L, R])]
@@ -78,6 +77,13 @@ package object ingot {
       val (st, res) = x.value.run(StateWithLogs.init(()))
       (st.logs, res)
     }
+  }
+
+  implicit class LoggableSyntax[A](x: A)(implicit L: Loggable[A]) {
+    def asError: LogMessage = L.toLogMessage(x, LogLevel.Error)
+    def asWarning: LogMessage = L.toLogMessage(x, LogLevel.Warning)
+    def asInfo: LogMessage = L.toLogMessage(x, LogLevel.Info)
+    def asDebug: LogMessage = L.toLogMessage(x, LogLevel.Debug)
   }
 
 }

@@ -15,22 +15,13 @@ val ingotStateDependencies = sharedDependencies ++ Seq(
 	"org.scalactic" %% "scalactic" % scalaTestVersion,
 	"org.scalatest" %% "scalatest" % scalaTestVersion % "test")
 
-val sharedSettings = Seq(
-  homepage := Some(url("https://16s.github.io/ingot")),
-  description := "Composable data structures for logging, error handling and flow control",
-  organization := "me.16s",
-  organizationHomepage := Some(url("https://github.com/16s")),
-  organizationName := "Tamas Neltz",
-  scalaVersion := "2.12.6",
-  (scalacOptions in (Compile, test)) ++= Seq(
+def compilerOptions(scalaVersion: String) = Seq(
     "-feature",
     "-deprecation",
     "-unchecked",
     "-explaintypes",
     "-language:higherKinds",
     "-language:implicitConversions",
-    "-groups",
-    "-implicits",
     "-Yno-adapted-args",                 // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
     "-Ypartial-unification",             // Enable partial unification in type constructor inference
     "-Ywarn-dead-code",                  // Warn when dead code is identified.
@@ -40,7 +31,7 @@ val sharedSettings = Seq(
     "-Ywarn-nullary-unit",               // Warn when nullary methods return Unit.
     "-Ywarn-numeric-widen",              // Warn when numerics are widened.
     "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
-  ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
+  ) ++ (CrossVersion.partialVersion(scalaVersion) match {
     case Some((2, major)) if major == 12 => Seq(
       "-Ywarn-extra-implicit",             // Warn when more than one implicit parameter section is defined.
       "-Ywarn-unused:implicits",           // Warn if an implicit parameter is unused.
@@ -68,7 +59,17 @@ val sharedSettings = Seq(
       "-Xlint:unsound-match"               // Pattern match may not be typesafe.
     )
     case _ => Seq()
-  }),
+  })
+
+val sharedSettings = Seq(
+  homepage := Some(url("https://16s.github.io/ingot")),
+  description := "Composable data structures for logging, error handling and flow control",
+  organization := "me.16s",
+  organizationHomepage := Some(url("https://github.com/16s")),
+  organizationName := "Tamas Neltz",
+  scalaVersion := "2.12.6",
+  scalacOptions in Compile ++= compilerOptions(scalaVersion.value),
+  scalacOptions in Tut := Seq(),
   scalariformPreferences := scalariformPreferences.value,
   scalacOptions in doc ++= Seq("-groups", "-implicits"),
   crossScalaVersions := Seq("2.11.11", "2.12.6"),

@@ -37,20 +37,20 @@ import ingot._
 
 ```scala
 scala> Clay.rightT[Int]("aaaa")
-res0: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@3cb5fd42)
+res0: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@67dadf2b)
 
 scala> Clay.leftT[String](5)
-res1: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@a3d4af7)
+res1: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@73a47cfd)
 
 scala> Clay.lift(Either.right[Int, String]("b"))
-res2: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@1d60ffb2)
+res2: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@1c41a0bf)
 ```
 
 you can even use guards against `Exception`s, for example you can automatically convert `scala.util.Try` to `Clay`.
 
 ```scala
 scala> Clay.guard(scala.util.Try("aaa"))
-res3: ingot.Clay[Throwable,String] = EitherT(cats.data.IndexedStateT@46088b72)
+res3: ingot.Clay[Throwable,String] = EitherT(cats.data.IndexedStateT@7a81263a)
 ```
 
 
@@ -70,9 +70,9 @@ final case class ValidatedMessage(msg: String, checkSum: Int)
 def service(): Clay[MyError, ValidatedMessage] = {
     for {
     resp <- getResponse()
-    _ <- Clay.log("Loaded the response")
+    _ <- Clay.log("Loaded the response".asInfo)
     cs <- responseCheckSum(resp)
-    _ <- Clay.log("Got the checksum")
+    _ <- Clay.log("Got the checksum".asDebug)
     } yield ValidatedMessage(resp, cs)
 }
 ```
@@ -82,7 +82,7 @@ Then you can just run it:
 
 ```scala
 scala> service().runAL()
-res4: (ingot.Logs, Either[MyError,ValidatedMessage]) = (Vector(Loaded the response, Got the checksum),Right(ValidatedMessage(a,5)))
+res4: (ingot.Logs, Either[MyError,ValidatedMessage]) = (Vector(LogMessage(Loaded the response,Info,Map()), LogMessage(Got the checksum,Debug,Map())),Right(ValidatedMessage(a,5)))
 ```
 
 or, if you only want the results and discard the logs:
@@ -96,7 +96,7 @@ or just the logs:
 
 ```scala
 scala> service().runL()
-res6: ingot.Logs = Vector(Loaded the response, Got the checksum)
+res6: ingot.Logs = Vector(LogMessage(Loaded the response,Info,Map()), LogMessage(Got the checksum,Debug,Map()))
 ```
 
 If you want to mix in an effect monad you can switch to `Brick[F[_], L, R]`. `Clay` is a more specific version of `Brick`,

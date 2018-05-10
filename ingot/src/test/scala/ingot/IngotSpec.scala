@@ -58,7 +58,7 @@ class IngotSpec extends FlatSpec {
   "Ingot" should "correctly map" in {
     val res: SimpleTestResult = for {
       x <- Ingot.rightT(5)
-      _ <- Ingot.log("This log message is ignored for now")
+      _ <- Ingot.log("This log message is ignored for now".asInfo)
       y <- Ingot.rightT(3)
     } yield x + y
 
@@ -68,18 +68,18 @@ class IngotSpec extends FlatSpec {
 
   it should "correctly collect logs" in {
     val res: SimpleTestResult = for {
-      _ <- Ingot.log("Something")
-      _ <- Ingot.log("Something else")
-      _ <- Ingot.log(Vector("3rd log", "4th log"))
+      _ <- Ingot.log("Something".asInfo)
+      _ <- Ingot.log("Something else".asInfo)
+      _ <- Ingot.log(Vector("3rd log".asDebug, "4th log".asInfo))
     } yield 5
 
     val result: Logs = res.runL(SimpleState.empty)
-    result should equal(Vector("Something", "Something else", "3rd log", "4th log"))
+    result should equal(Vector(LogMessage("Something", LogLevel.Info), LogMessage("Something else", LogLevel.Info), LogMessage("3rd log", LogLevel.Debug), LogMessage("4th log", LogLevel.Info)))
   }
 
   it should "correctly transform the state" in {
     val res: SimpleTestResult = for {
-      _ <- Ingot.log[Id, SimpleState, String]("Starting off")
+      _ <- Ingot.log[Id, SimpleState, String]("Starting off".asInfo)
       st <- Ingot.get
       _ <- Ingot.set(SimpleState(st.id * 2))
       _ <- Ingot.modify((x: SimpleState) => SimpleState(x.id + 3))
@@ -94,9 +94,9 @@ class IngotSpec extends FlatSpec {
       _ <- Ingot.inspect[String]((st: SimpleState) => Either.right[String, String](""): Id[Either[String, String]])
       _ <- Ingot.inspectE((st: SimpleState) => st.id)
       _ <- Ingot.inspectF[Id, SimpleState, String, Int]((st: SimpleState) => Either.right[String, Int](st.id))
-      _ <- Ingot.inspectL((st: SimpleState) => (Vector.empty[String], Either.right[String, String]("")))
-      _ <- Ingot.inspectEL((st: SimpleState) => (Vector.empty[String], ""))
-      _ <- Ingot.inspectFL[Id, SimpleState, String, String]((st: SimpleState) => (Vector.empty[String], Either.right[String, String]("")))
+      _ <- Ingot.inspectL((st: SimpleState) => (Vector.empty[LogMessage], Either.right[String, String]("")))
+      _ <- Ingot.inspectEL((st: SimpleState) => (Vector.empty[LogMessage], ""))
+      _ <- Ingot.inspectFL[Id, SimpleState, String, String]((st: SimpleState) => (Vector.empty[LogMessage], Either.right[String, String]("")))
     } yield 5
     val result: Either[String, Int] = res.runA(SimpleState(1))
     result should equal(Either.right[String, Int](5))

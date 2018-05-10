@@ -3,7 +3,6 @@ package ingot
 import cats.data.{ EitherT, StateT }
 import cats.Applicative
 import cats.syntax.either._
-import cats.Monoid
 
 object Ingot {
   outer =>
