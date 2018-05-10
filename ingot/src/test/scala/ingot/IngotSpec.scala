@@ -31,6 +31,29 @@ object SimpleState {
 }
 
 class IngotSpec extends FlatSpec {
+  implicit val tryOptionGuard = new Guard[Try, Option] {
+    override def apply[A](x: Try[A]): Option[Either[Throwable, A]] = x match {
+      case scala.util.Success(x) => Some(Right(x))
+      case scala.util.Failure(err) => Some(Left(err))
+    }
+  }
+
+  "Brick" should "correctly compose" in {
+    import cats.instances.option._
+    (for {
+      a <- Brick.guard[Option](Try("a"))
+      b <- Brick.right[Throwable](Option("b"))
+      c <- Brick.rightT[Option, Throwable]("c")
+    } yield a + b + c).runA() should equal(Some(Right("abc")))
+  }
+
+  "Clay" should "correctly compose" in {
+    (for {
+      a <- Clay.rightT[Int]("a")
+      b <- Clay.rightT[Int]("b")
+    } yield a + b).runA() should equal(Right("ab"))
+  }
+
   type SimpleTestResult = Ingot[Id, SimpleState, String, Int]
   "Ingot" should "correctly map" in {
     val res: SimpleTestResult = for {

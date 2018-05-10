@@ -28,7 +28,7 @@ package object ingot {
 
   type ActionType[F[_], S, L, R] = StateWithLogs[S] => F[(StateWithLogs[S], Either[L, R])]
   type Ingot[F[_], S, L, R] = EitherT[StateT[F, StateWithLogs[S], ?], L, R]
-  type Yoga[F[_], L, R] = Ingot[F, Unit, L, R]
+  type Brick[F[_], L, R] = Ingot[F, Unit, L, R]
   type Clay[L, R] = Ingot[Id, Unit, L, R]
 
   implicit class IngotSyntax[F[_], S, L, R](x: Ingot[F, S, L, R]) {
