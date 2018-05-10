@@ -119,13 +119,13 @@ class IngotSpec extends FlatSpec {
     }
     val lst = Ingot.right[List, Unit, String, Int](List(1, 2, 3))
     val opt = lst.withMonad[Option]
-    opt.runA(()) should equal(Some(Right(1)))
+    opt.runA() should equal(Some(Right(1)))
   }
 
   it should "use guards" in {
     val ex = new Exception("error")
     val failed: Try[String] = scala.util.Failure(ex)
-    val result = Ingot.guard[Try, cats.Id, Unit, String](failed).runA(())
+    val result = Ingot.guard[Try, cats.Id, Unit, String](failed).runA()
     result should equal(Left(ex))
   }
 }

@@ -16,8 +16,8 @@
 
 import cats.{ Applicative, FlatMap, Functor, ~> }
 import cats.data.{ EitherT, StateT }
-import cats.syntax.all._
 import cats.instances.all._
+import cats.Id
 
 import scala.language.higherKinds
 
@@ -28,6 +28,8 @@ package object ingot {
 
   type ActionType[F[_], S, L, R] = StateWithLogs[S] => F[(StateWithLogs[S], Either[L, R])]
   type Ingot[F[_], S, L, R] = EitherT[StateT[F, StateWithLogs[S], ?], L, R]
+  type Yoga[F[_], L, R] = Ingot[F, Unit, L, R]
+  type Clay[L, R] = Ingot[Id, Unit, L, R]
 
   implicit class IngotSyntax[F[_], S, L, R](x: Ingot[F, S, L, R]) {
     def run(st: S)(implicit F: FlatMap[F]): F[(Logs, S, Either[L, R])] =
@@ -53,4 +55,29 @@ package object ingot {
         { case StateWithLogs(logs, state) => StateWithLogs(logs, CS.inspect(state)) },
         { case (StateWithLogs(_, ss), StateWithLogs(logs, s)) => StateWithLogs(logs, CS.update(ss, s)) }))
   }
+
+  implicit class YogaSyntax[F[_], L, R](x: Ingot[F, Unit, L, R]) {
+    def runA()(implicit F: FlatMap[F]): F[Either[L, R]] =
+      F.map(x.value.run(StateWithLogs.init(())))({ case (_, r) => r })
+
+    def runL()(implicit F: FlatMap[F]): F[Logs] =
+      F.map(x.value.run(StateWithLogs.init(())))({ case (StateWithLogs(logs, _), _) => logs })
+
+    def runAL()(implicit F: FlatMap[F]): F[(Logs, Either[L, R])] =
+      F.map(x.value.run(StateWithLogs.init(())))({ case (StateWithLogs(logs, _), r) => (logs, r) })
+  }
+
+  implicit class ClaySyntax[L, R](x: Ingot[Id, Unit, L, R]) {
+    def runA(): Either[L, R] =
+      x.value.run(StateWithLogs.init(()))._2
+
+    def runL(): Logs =
+      x.value.run(StateWithLogs.init(()))._1.logs
+
+    def runAL(): (Logs, Either[L, R]) = {
+      val (st, res) = x.value.run(StateWithLogs.init(()))
+      (st.logs, res)
+    }
+  }
+
 }
