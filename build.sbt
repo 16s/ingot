@@ -29,6 +29,8 @@ val sharedSettings = Seq(
     "-explaintypes",
     "-language:higherKinds",
     "-language:implicitConversions",
+    "-groups",
+    "-implicits",
     "-Yno-adapted-args",                 // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
     "-Ypartial-unification",             // Enable partial unification in type constructor inference
     "-Ywarn-dead-code",                  // Warn when dead code is identified.
@@ -68,7 +70,7 @@ val sharedSettings = Seq(
     case _ => Seq()
   }),
   scalariformPreferences := scalariformPreferences.value,
-  scalacOptions in (Compile,doc) ++= Seq("-groups", "-implicits"),
+  scalacOptions in doc ++= Seq("-groups", "-implicits"),
   crossScalaVersions := Seq("2.11.11", "2.12.6"),
   releaseCrossBuild := true,
   pomIncludeRepository := { _ => false },

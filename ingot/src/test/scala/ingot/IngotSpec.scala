@@ -91,7 +91,7 @@ class IngotSpec extends FlatSpec {
 
   it should "correctly use inspects" in {
     val res: SimpleTestResult = for {
-      _ <- Ingot.inspect[Id, SimpleState, String, String]((st: SimpleState) => Either.right[String, String](""))
+      _ <- Ingot.inspect[String]((st: SimpleState) => Either.right[String, String](""): Id[Either[String, String]])
       _ <- Ingot.inspectE((st: SimpleState) => st.id)
       _ <- Ingot.inspectF[Id, SimpleState, String, Int]((st: SimpleState) => Either.right[String, Int](st.id))
       _ <- Ingot.inspectL((st: SimpleState) => (Vector.empty[String], Either.right[String, String]("")))
@@ -140,7 +140,7 @@ class IngotSpec extends FlatSpec {
     implicit val idToList = new (List ~> Option) {
       def apply[A](x: List[A]): Option[A] = x.headOption
     }
-    val lst = Ingot.right[List, Unit, String, Int](List(1, 2, 3))
+    val lst = Ingot.right[Unit, String](List(1, 2, 3))
     val opt = lst.withMonad[Option]
     opt.runA() should equal(Some(Right(1)))
   }
@@ -148,7 +148,7 @@ class IngotSpec extends FlatSpec {
   it should "use guards" in {
     val ex = new Exception("error")
     val failed: Try[String] = scala.util.Failure(ex)
-    val result = Ingot.guard[Try, cats.Id, Unit, String](failed).runA()
+    val result = Ingot.guard[Id, Unit](failed).runA()
     result should equal(Left(ex))
   }
 }

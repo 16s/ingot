@@ -5,6 +5,7 @@ import ingot._
 import scala.concurrent.{ Future }
 import cats.instances.all._
 import cats.~>
+import cats.Id
 import shapeless._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -25,7 +26,7 @@ object Implementation {
 
   implicit val testParser = new Parser[ParserState] {
     override def parse(s: String): Ingot[cats.Id, ParserState, String, Parsed] =
-      Ingot.right[cats.Id, ParserState, String, Parsed](Parsed(s"parsed:$s"))
+      Ingot.right[ParserState, String](Parsed(s"parsed:$s"): Id[Parsed])
   }
 
   implicit val testClient = new Client[ClientState] {
