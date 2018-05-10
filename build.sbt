@@ -22,7 +22,7 @@ val sharedSettings = Seq(
   organizationHomepage := Some(url("https://github.com/16s")),
   organizationName := "Tamas Neltz",
   scalaVersion := "2.12.6",
-  scalacOptions ++= Seq(
+  (scalacOptions in (Compile, test)) ++= Seq(
     "-feature",
     "-deprecation",
     "-unchecked",

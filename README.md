@@ -37,29 +37,20 @@ import ingot._
 
 ```scala
 scala> Clay.rightT[Int]("aaaa")
-<console>:10: warning: Unused import
-       import cats.syntax.either._
-                                 ^
-res0: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@4d3bdb3c)
+res0: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@3cb5fd42)
 
 scala> Clay.leftT[String](5)
-<console>:10: warning: Unused import
-       import cats.syntax.either._
-                                 ^
-res1: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@9924f5d)
+res1: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@a3d4af7)
 
 scala> Clay.lift(Either.right[Int, String]("b"))
-res2: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@7b86a9b8)
+res2: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@1d60ffb2)
 ```
 
 you can even use guards against `Exception`s, for example you can automatically convert `scala.util.Try` to `Clay`.
 
 ```scala
 scala> Clay.guard(scala.util.Try("aaa"))
-<console>:10: warning: Unused import
-       import cats.syntax.either._
-                                 ^
-res3: ingot.Clay[Throwable,String] = EitherT(cats.data.IndexedStateT@918b621)
+res3: ingot.Clay[Throwable,String] = EitherT(cats.data.IndexedStateT@46088b72)
 ```
 
 
@@ -91,12 +82,6 @@ Then you can just run it:
 
 ```scala
 scala> service().runAL()
-<console>:10: warning: Unused import
-       import cats.syntax.either._
-                                 ^
-<console>:13: warning: Unused import
-       import ingot._
-                    ^
 res4: (ingot.Logs, Either[MyError,ValidatedMessage]) = (Vector(Loaded the response, Got the checksum),Right(ValidatedMessage(a,5)))
 ```
 
@@ -104,12 +89,6 @@ or, if you only want the results and discard the logs:
 
 ```scala
 scala> service().runA()
-<console>:10: warning: Unused import
-       import cats.syntax.either._
-                                 ^
-<console>:13: warning: Unused import
-       import ingot._
-                    ^
 res5: Either[MyError,ValidatedMessage] = Right(ValidatedMessage(a,5))
 ```
 
@@ -117,12 +96,6 @@ or just the logs:
 
 ```scala
 scala> service().runL()
-<console>:10: warning: Unused import
-       import cats.syntax.either._
-                                 ^
-<console>:13: warning: Unused import
-       import ingot._
-                    ^
 res6: ingot.Logs = Vector(Loaded the response, Got the checksum)
 ```
 
@@ -139,57 +112,15 @@ way as `Clay` with a few materializers added to support more input methods
 
 ```scala
 scala> import scala.concurrent.Future
-<console>:10: warning: Unused import
-       import cats.syntax.either._
-                                 ^
-<console>:13: warning: Unused import
-       import ingot._
-                    ^
-<console>:16: warning: Unused import
-       import ingot._
-                    ^
-<console>:21: warning: Unused import
-       import scala.concurrent.Future
-                               ^
 import scala.concurrent.Future
 
 scala> sealed trait SendMessageError
-<console>:10: warning: Unused import
-       import cats.syntax.either._
-                                 ^
-<console>:13: warning: Unused import
-       import ingot._
-                    ^
-<console>:16: warning: Unused import
-       import ingot._
-                    ^
-<console>:18: warning: Unused import
-       import scala.concurrent.Future
-                               ^
 defined trait SendMessageError
 
 scala> final case object SendMessageTimeout extends SendMessageError
-<console>:10: warning: Unused import
-       import cats.syntax.either._
-                                 ^
-<console>:13: warning: Unused import
-       import ingot._
-                    ^
-<console>:16: warning: Unused import
-       import ingot._
-                    ^
-<console>:18: warning: Unused import
-       import scala.concurrent.Future
-                               ^
 defined object SendMessageTimeout
 
 scala> def sendMessage: Brick[Future, SendMessageError, Unit] = ??? 
-<console>:10: warning: Unused import
-       import cats.syntax.either._
-                                 ^
-<console>:13: warning: Unused import
-       import ingot._
-                    ^
 sendMessage: ingot.Brick[scala.concurrent.Future,SendMessageError,Unit]
 ```
 
