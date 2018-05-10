@@ -73,7 +73,7 @@ class StateSpec extends FlatSpec {
 
   it should "properly call invoke implementation" in {
     import Implementation._
-    val result = Await.result(TestService.run[ParserState, ClientState]("a").runA((ParserState(), ClientState())), Duration.Inf)
+    val result = Await.result(TestService.run[ParserState, ClientState, (ParserState, ClientState)]("a").runA((ParserState(), ClientState())), Duration.Inf)
     result should equal(Right(Response("url:parsed:a")))
   }
 

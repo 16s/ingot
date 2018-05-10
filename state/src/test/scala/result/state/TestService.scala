@@ -40,12 +40,14 @@ object TestService {
     override def apply[A](fa: Id[A]): Future[A] = Future.successful(fa)
   }
 
-  def run[ParserS, ClientS](
+  def run[ParserS, ClientS, CombinedS](
     s: String)(
     implicit
     P: Parser[ParserS],
-    C: Client[ClientS]): ResultT[Future, (ParserS, ClientS), String, Response] = for {
-    parsed <- P.parse(s).withMonad[Future].transformS[(ParserS, ClientS)]
-    response <- C.fetch(parsed.s).transformS[(ParserS, ClientS)]
+    C: Client[ClientS],
+    PCS: CompositeState[ParserS, CombinedS],
+    CCS: CompositeState[ClientS, CombinedS]): ResultT[Future, CombinedS, String, Response] = for {
+    parsed <- P.parse(s).withMonad[Future].transformS[CombinedS]
+    response <- C.fetch(parsed.s).transformS[CombinedS]
   } yield response
 }
