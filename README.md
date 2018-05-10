@@ -1,36 +1,62 @@
-### A simple return type to manage dependencies and logging
+### Composable data structures for logging, error handling and flow control
 
-This is a tiny library with the primary goal to create a standard return type that handles
-errors and logging (for motivation see my [ny-scala talk](https://youtu.be/xoJcLDOa98M)) 
+`result` is a small library that help you build composable programs.
+
+The underlying is that you can build programs that define their own effects, state and errors, then
+you can easily snap them together using the API the library provides.
+
+The base library is built on top of [cats](https://typelevel.org/cats/) and the extension library
+relies on [shapeless](https://github.com/milessabin/shapeless) to make creating composite state
+data types easy.
+
+The library is currently built against Scala 2.11.x and 2.12.x.
+
+It's still in early development, a lot is going to change.
+
+### Installation
+
+```
+libraryDependencies += "me.16s" %% "ingot" % "0.1.3"
+```
+
+or, the latest dev version is
+
+```
+libraryDependencies += "me.16s" %% "ingot" % "0.1.4-SNAPSHOT"
+```
 
 
 #### Usage
 
-First, import the library
+The simplest use case is when there is no state or effect monad:
 
 ```scala
-import result._
-import scala.concurrent.Future
-```
+import ingot._
 
-create an error type (or use an existing one), a simple ADT should do it 
-
-```scala
 sealed trait MyError
 final case class ConnectionError(msg: String) extends MyError
-final case class DataConsistencyError(id: Int) extends MyError 
+final case class DataConsistencyError(id: Int) extends MyError
+
+def getResponse(): Clay[MyError, String] = Clay.rightT("a")
+
+def responseCheckSum(resp: String): Clay[MyError, Int] = Clay.rightT(5)
+
+final case class ValidatedMessage(msg: String, checkSum: Int)
+
+def service(): Clay[MyError, ValidatedMessage] = {
+    for {
+    resp <- getResponse()
+    _ <- Clay.log("Loaded the response")
+    cs <- responseCheckSum(resp)
+    _ <- Clay.log("Got the checksum")
+    } yield ValidatedMessage(resp, cs)
+}
 ```
 
-if you need a state, create it, otherwise just use `Unit`
+
+Then you can just run it:
 
 ```scala
-final case class MyState(connections: Int)
+scala> service().runAL()
+res0: (ingot.Logs, Either[MyError,ValidatedMessage]) = (Vector(Loaded the response, Got the checksum),Right(ValidatedMessage(a,5)))
 ```
-
-now you can create your own Return type
-
-```scala
-type MyReturn[A] = ResultT[Future, MyState, MyError, A]
-```
-
-more to follow...

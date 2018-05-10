@@ -9,58 +9,53 @@ The base library is built on top of [cats](https://typelevel.org/cats/) and the 
 relies on [shapeless](https://github.com/milessabin/shapeless) to make creating composite state
 data types easy.
 
-The library is currently built against Scala 2.11.x and 2.12.x. Development
+The library is currently built against Scala 2.11.x and 2.12.x.
+
+It's still in early development, a lot is going to change.
 
 ### Installation
 
 ```
-libraryDependencies += "me.16s" %% "result" % "0.1.2"
+libraryDependencies += "me.16s" %% "ingot" % "0.1.3"
 ```
+
+or, the latest dev version is
+
+```
+libraryDependencies += "me.16s" %% "ingot" % "0.1.4-SNAPSHOT"
+```
+
 
 #### Usage
 
-To define a new program, for example a simple HTTP client 
+The simplest use case is when there is no state or effect monad:
 
 ```tut:silent
-import result._
-import scala.concurrent.Future
-```
+import ingot._
 
-let's describe the error cases
-
-```tut:silent
 sealed trait MyError
 final case class ConnectionError(msg: String) extends MyError
 final case class DataConsistencyError(id: Int) extends MyError
-```
 
+def getResponse(): Clay[MyError, String] = Clay.rightT("a")
 
-```tut:silent
-final case class Request(url: String)
-final case class Response(body: String)
+def responseCheckSum(resp: String): Clay[MyError, Int] = Clay.rightT(5)
 
-trait Client {
-    // this method could potentially fail
-    def request(url: Request): Future[Response] = ??? 
+final case class ValidatedMessage(msg: String, checkSum: Int)
+
+def service(): Clay[MyError, ValidatedMessage] = {
+    for {
+    resp <- getResponse()
+    _ <- Clay.log("Loaded the response")
+    cs <- responseCheckSum(resp)
+    _ <- Clay.log("Got the checksum")
+    } yield ValidatedMessage(resp, cs)
 }
-
-final case class HttpClientState(clientPool: List[Client])
-
-object HttpClient {
-    def request(req: Request): ResultT[Future, HttpClientState, MyError] = ???
-}  
 ```
 
-if you need a state, create it, otherwise just use `Unit`
 
-```tut:silent
-final case class MyState(connections: Int)
+Then you can just run it:
+
+```tut
+service().runAL()
 ```
-
-now you can create your own Return type
-
-```tut:silent
-type MyReturn[A] = ResultT[Future, MyState, MyError, A]
-```
-
-more to follow...
