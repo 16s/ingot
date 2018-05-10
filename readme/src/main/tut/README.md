@@ -59,3 +59,15 @@ Then you can just run it:
 ```tut
 service().runAL()
 ```
+
+or, if you only want the results and discard the logs:
+
+```tut
+service().runA()
+```
+
+or just the logs:
+
+```tut
+service().runL()
+```

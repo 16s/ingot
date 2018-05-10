@@ -60,3 +60,17 @@ Then you can just run it:
 scala> service().runAL()
 res0: (ingot.Logs, Either[MyError,ValidatedMessage]) = (Vector(Loaded the response, Got the checksum),Right(ValidatedMessage(a,5)))
 ```
+
+or, if you only want the results and discard the logs:
+
+```scala
+scala> service().runA()
+res1: Either[MyError,ValidatedMessage] = Right(ValidatedMessage(a,5))
+```
+
+or just the logs:
+
+```scala
+scala> service().runL()
+res2: ingot.Logs = Vector(Loaded the response, Got the checksum)
+```
