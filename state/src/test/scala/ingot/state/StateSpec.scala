@@ -39,18 +39,18 @@ final case class CombinedState(c: DbConnection, h: HttpClient)
 
 class StateSpec extends FlatSpec {
 
-  private def getIdFromDb(id: Int): IngotT[Id, DbConnection, String, String] = IngotT.pure(s"id:${id.toString}")
+  private def getIdFromDb(id: Int): Ingot[Id, DbConnection, String, String] = Ingot.pure(s"id:${id.toString}")
 
-  private def getDataFromApi(url: String): IngotT[Id, HttpClient, String, String] = IngotT.pure(s"url:$url")
+  private def getDataFromApi(url: String): Ingot[Id, HttpClient, String, String] = Ingot.pure(s"url:$url")
 
-  private def getFromDbAndApi: IngotT[Id, DbConnection :: HttpClient :: HNil, String, String] = {
+  private def getFromDbAndApi: Ingot[Id, DbConnection :: HttpClient :: HNil, String, String] = {
     for {
       id <- getIdFromDb(5).transformS[DbConnection :: HttpClient :: HNil]
       url <- getDataFromApi("http://localhost").transformS[DbConnection :: HttpClient :: HNil]
     } yield s"$id$url"
   }
 
-  private def getFromDbAndApiWithCombinedState: IngotT[Id, CombinedState, String, String] = {
+  private def getFromDbAndApiWithCombinedState: Ingot[Id, CombinedState, String, String] = {
     for {
       id <- getIdFromDb(5).transformS[CombinedState]
       url <- getDataFromApi("http://localhost").transformS[CombinedState]
