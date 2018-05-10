@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package result
+package ingot
 
 import cats.Id
 import org.scalatest._
@@ -22,19 +22,21 @@ import Matchers._
 import cats.syntax.either._
 import cats.~>
 
+import scala.util.Try
+
 final case class SimpleState(id: Int)
 
 object SimpleState {
   val empty = SimpleState(0)
 }
 
-class ResultTSpec extends FlatSpec {
-  type SimpleTestResult = ResultT[Id, SimpleState, String, Int]
-  "ResultT" should "correctly map" in {
+class IngotTSpec extends FlatSpec {
+  type SimpleTestResult = IngotT[Id, SimpleState, String, Int]
+  "IngotT" should "correctly map" in {
     val res: SimpleTestResult = for {
-      x <- ResultT.rightT(5)
-      _ <- ResultT.log("This log message is ignored for now")
-      y <- ResultT.rightT(3)
+      x <- IngotT.rightT(5)
+      _ <- IngotT.log("This log message is ignored for now")
+      y <- IngotT.rightT(3)
     } yield x + y
 
     val result: Either[String, Int] = res.runA(SimpleState.empty)
@@ -43,9 +45,9 @@ class ResultTSpec extends FlatSpec {
 
   it should "correctly collect logs" in {
     val res: SimpleTestResult = for {
-      _ <- ResultT.log("Something")
-      _ <- ResultT.log("Something else")
-      _ <- ResultT.log(Vector("3rd log", "4th log"))
+      _ <- IngotT.log("Something")
+      _ <- IngotT.log("Something else")
+      _ <- IngotT.log(Vector("3rd log", "4th log"))
     } yield 5
 
     val result: Logs = res.runL(SimpleState.empty)
@@ -54,11 +56,11 @@ class ResultTSpec extends FlatSpec {
 
   it should "correctly transform the state" in {
     val res: SimpleTestResult = for {
-      _ <- ResultT.log[Id, SimpleState, String]("Starting off")
-      st <- ResultT.get
-      _ <- ResultT.set(SimpleState(st.id * 2))
-      _ <- ResultT.modify((x: SimpleState) => SimpleState(x.id + 3))
-      st <- ResultT.get
+      _ <- IngotT.log[Id, SimpleState, String]("Starting off")
+      st <- IngotT.get
+      _ <- IngotT.set(SimpleState(st.id * 2))
+      _ <- IngotT.modify((x: SimpleState) => SimpleState(x.id + 3))
+      st <- IngotT.get
     } yield st.id
     val result: SimpleState = res.runS(SimpleState(1))
     result should equal(SimpleState(5))
@@ -66,12 +68,12 @@ class ResultTSpec extends FlatSpec {
 
   it should "correctly use inspects" in {
     val res: SimpleTestResult = for {
-      _ <- ResultT.inspect[Id, SimpleState, String, String]((st: SimpleState) => Either.right[String, String](""))
-      _ <- ResultT.inspectE((st: SimpleState) => st.id)
-      _ <- ResultT.inspectF[Id, SimpleState, String, Int]((st: SimpleState) => Either.right[String, Int](st.id))
-      _ <- ResultT.inspectL((st: SimpleState) => (Vector.empty[String], Either.right[String, String]("")))
-      _ <- ResultT.inspectEL((st: SimpleState) => (Vector.empty[String], ""))
-      _ <- ResultT.inspectFL[Id, SimpleState, String, String]((st: SimpleState) => (Vector.empty[String], Either.right[String, String]("")))
+      _ <- IngotT.inspect[Id, SimpleState, String, String]((st: SimpleState) => Either.right[String, String](""))
+      _ <- IngotT.inspectE((st: SimpleState) => st.id)
+      _ <- IngotT.inspectF[Id, SimpleState, String, Int]((st: SimpleState) => Either.right[String, Int](st.id))
+      _ <- IngotT.inspectL((st: SimpleState) => (Vector.empty[String], Either.right[String, String]("")))
+      _ <- IngotT.inspectEL((st: SimpleState) => (Vector.empty[String], ""))
+      _ <- IngotT.inspectFL[Id, SimpleState, String, String]((st: SimpleState) => (Vector.empty[String], Either.right[String, String]("")))
     } yield 5
     val result: Either[String, Int] = res.runA(SimpleState(1))
     result should equal(Either.right[String, Int](5))
@@ -91,11 +93,11 @@ class ResultTSpec extends FlatSpec {
   implicit val httpCompositeState =
     CompositeState.instance[HttpClient, (DbConnection, HttpClient)](_._2, { case (x, y) => (x._1, y) })
 
-  private def getIdFromDb(id: Int): ResultT[Id, DbConnection, String, String] = ResultT.pure(s"id:${id.toString}")
+  private def getIdFromDb(id: Int): IngotT[Id, DbConnection, String, String] = IngotT.pure(s"id:${id.toString}")
 
-  private def getDataFromApi(url: String): ResultT[Id, HttpClient, String, String] = ResultT.pure(s"url:$url")
+  private def getDataFromApi(url: String): IngotT[Id, HttpClient, String, String] = IngotT.pure(s"url:$url")
 
-  private def getFromDbAndApi: ResultT[Id, (DbConnection, HttpClient), String, String] = {
+  private def getFromDbAndApi: IngotT[Id, (DbConnection, HttpClient), String, String] = {
     for {
       id <- getIdFromDb(5).transformS[(DbConnection, HttpClient)]
       url <- getDataFromApi("http://localhost").transformS[(DbConnection, HttpClient)]
@@ -115,8 +117,15 @@ class ResultTSpec extends FlatSpec {
     implicit val idToList = new (List ~> Option) {
       def apply[A](x: List[A]): Option[A] = x.headOption
     }
-    val lst = ResultT.right[List, Unit, String, Int](List(1, 2, 3))
+    val lst = IngotT.right[List, Unit, String, Int](List(1, 2, 3))
     val opt = lst.withMonad[Option]
     opt.runA(()) should equal(Some(Right(1)))
+  }
+
+  it should "use guards" in {
+    val ex = new Exception("error")
+    val failed: Try[String] = scala.util.Failure(ex)
+    val result = IngotT.guard[Try, cats.Id, Unit, String](failed).runA(())
+    result should equal(Left(ex))
   }
 }

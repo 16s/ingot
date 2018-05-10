@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package result.state
+package ingot.state
 
 import org.scalatest._
 import Matchers._
 import cats.Id
-import result._
+import ingot._
 import shapeless._
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.instances.future._
@@ -39,25 +39,25 @@ final case class CombinedState(c: DbConnection, h: HttpClient)
 
 class StateSpec extends FlatSpec {
 
-  private def getIdFromDb(id: Int): ResultT[Id, DbConnection, String, String] = ResultT.pure(s"id:${id.toString}")
+  private def getIdFromDb(id: Int): IngotT[Id, DbConnection, String, String] = IngotT.pure(s"id:${id.toString}")
 
-  private def getDataFromApi(url: String): ResultT[Id, HttpClient, String, String] = ResultT.pure(s"url:$url")
+  private def getDataFromApi(url: String): IngotT[Id, HttpClient, String, String] = IngotT.pure(s"url:$url")
 
-  private def getFromDbAndApi: ResultT[Id, DbConnection :: HttpClient :: HNil, String, String] = {
+  private def getFromDbAndApi: IngotT[Id, DbConnection :: HttpClient :: HNil, String, String] = {
     for {
       id <- getIdFromDb(5).transformS[DbConnection :: HttpClient :: HNil]
       url <- getDataFromApi("http://localhost").transformS[DbConnection :: HttpClient :: HNil]
     } yield s"$id$url"
   }
 
-  private def getFromDbAndApiWithCombinedState: ResultT[Id, CombinedState, String, String] = {
+  private def getFromDbAndApiWithCombinedState: IngotT[Id, CombinedState, String, String] = {
     for {
       id <- getIdFromDb(5).transformS[CombinedState]
       url <- getDataFromApi("http://localhost").transformS[CombinedState]
     } yield s"$id$url"
   }
 
-  "result-state" should "correctly combine multiple states into one HList" in {
+  "ingot-state" should "correctly combine multiple states into one HList" in {
     val st: DbConnection :: HttpClient :: HNil = new DbConnection { override val connNum = 5 } :: new HttpClient { override def run = identity } :: HNil
 
     val result = getFromDbAndApi.runA(st)

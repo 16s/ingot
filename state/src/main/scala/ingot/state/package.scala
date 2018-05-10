@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package result
+package ingot
 import shapeless._
 import shapeless.ops.hlist._
 

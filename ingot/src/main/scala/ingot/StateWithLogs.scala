@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package result
+package ingot
 
-trait CompositeState[S, SS] {
-  def inspect(ss: SS): S
-  def update(ss: SS, s: S): SS
+import cats.Applicative
+import cats.instances.all._
+
+final case class StateWithLogs[+S](logs: Logs, state: S) {
+  def combine(x: LogMessage): StateWithLogs[S] =
+    copy(logs = cats.Monoid[Logs].combine(logs, Applicative[LogContainer].pure(x)))
+  def combine(x: Logs): StateWithLogs[S] =
+    copy(logs = cats.Monoid[Logs].combine(logs, x))
 }
 
-object CompositeState {
-  def apply[S, SS](implicit gen: CompositeState[S, SS]): CompositeState[S, SS] = gen
-
-  def instance[S, SS](f: SS => S, g: (SS, S) => SS): CompositeState[S, SS] = new CompositeState[S, SS] {
-    override def inspect(ss: SS): S = f(ss)
-    override def update(ss: SS, s: S): SS = g(ss, s)
-  }
+object StateWithLogs {
+  def init[S](s: S)(implicit M: cats.Monoid[Logs]): StateWithLogs[S] = StateWithLogs(cats.Monoid[Logs].empty, s)
 }

@@ -1,6 +1,6 @@
-package result.state
+package ingot.state
 
-import result._
+import ingot._
 
 import scala.concurrent.{ Future }
 import cats.instances.all._
@@ -11,12 +11,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 final case class Parsed(s: String)
 trait Parser[S] {
-  def parse(s: String): ResultT[cats.Id, S, String, Parsed]
+  def parse(s: String): IngotT[cats.Id, S, String, Parsed]
 }
 
 final case class Response(url: String)
 trait Client[S] {
-  def fetch(url: String): ResultT[Future, S, String, Response]
+  def fetch(url: String): IngotT[Future, S, String, Response]
 }
 
 object Implementation {
@@ -24,13 +24,13 @@ object Implementation {
   final case class ClientState()
 
   implicit val testParser = new Parser[ParserState] {
-    override def parse(s: String): ResultT[cats.Id, ParserState, String, Parsed] =
-      ResultT.right[cats.Id, ParserState, String, Parsed](Parsed(s"parsed:$s"))
+    override def parse(s: String): IngotT[cats.Id, ParserState, String, Parsed] =
+      IngotT.right[cats.Id, ParserState, String, Parsed](Parsed(s"parsed:$s"))
   }
 
   implicit val testClient = new Client[ClientState] {
-    def fetch(url: String): ResultT[Future, ClientState, String, Response] =
-      ResultT.pure[Future, ClientState, String, Response](Response(s"url:$url"))
+    def fetch(url: String): IngotT[Future, ClientState, String, Response] =
+      IngotT.pure[Future, ClientState, String, Response](Response(s"url:$url"))
   }
 
 }
@@ -46,7 +46,7 @@ object TestService {
     P: Parser[ParserS],
     C: Client[ClientS],
     PCS: CompositeState[ParserS, CombinedS],
-    CCS: CompositeState[ClientS, CombinedS]): ResultT[Future, CombinedS, String, Response] = for {
+    CCS: CompositeState[ClientS, CombinedS]): IngotT[Future, CombinedS, String, Response] = for {
     parsed <- P.parse(s).withMonad[Future].transformS[CombinedS]
     response <- C.fetch(parsed.s).transformS[CombinedS]
   } yield response

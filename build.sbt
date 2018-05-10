@@ -1,10 +1,8 @@
-import microsites.CdnDirectives
-
 val catsVersion = "1.1.0"
 val scalaTestVersion = "3.0.5"
 val sharedDependencies = Seq()
 
-val resultDependencies = sharedDependencies ++ Seq(
+val ingotDependencies = sharedDependencies ++ Seq(
 	"org.typelevel" %% "cats-core" % catsVersion,
 	"org.typelevel" %% "cats-kernel" % catsVersion,
 	"org.typelevel" %% "cats-macros" % catsVersion,
@@ -12,16 +10,16 @@ val resultDependencies = sharedDependencies ++ Seq(
 	"org.scalatest" %% "scalatest" % scalaTestVersion % "test",
 	compilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"))
 
-val resultStateDependencies = sharedDependencies ++ Seq(
+val ingotStateDependencies = sharedDependencies ++ Seq(
 	"com.chuusai" %% "shapeless" % "2.3.3",
 	"org.scalactic" %% "scalactic" % scalaTestVersion,
 	"org.scalatest" %% "scalatest" % scalaTestVersion % "test")
 
 val sharedSettings = Seq(
-  homepage := Some(url("https://16s.github.io/result")),
-  description := "A simple library to handle effects, logs, errors and state",
+  homepage := Some(url("https://16s.github.io/ingot")),
+  description := "Composable data structures for logging, error handling and flow control",
   organization := "me.16s",
-  organizationHomepage := Some(url("https://16s.github.io")),
+  organizationHomepage := Some(url("https://github.com/16s")),
   organizationName := "Tamas Neltz",
   scalaVersion := "2.12.6",
   scalacOptions ++= Seq(
@@ -76,8 +74,8 @@ val sharedSettings = Seq(
   pomIncludeRepository := { _ => false },
   scmInfo := Some(
     ScmInfo(
-      url("https://github.com/16s/result"),
-      "scm:git@github.com:16s/result.git"
+      url("https://github.com/16s/ingot"),
+      "scm:git@github.com:16s/ingot.git"
     )
   ),
   developers := List(
@@ -103,38 +101,38 @@ val codeSettings = sharedSettings ++ Seq(
   wartremoverErrors ++= Warts.unsafe
 )
 
-lazy val resultLib = (project in file("result")).settings(codeSettings, Seq(
-	name := "result",
-	libraryDependencies ++= resultDependencies,
-  tutTargetDirectory := file("result"))).enablePlugins(TutPlugin)
+lazy val ingotLib = (project in file("ingot")).settings(codeSettings, Seq(
+	name := "ingot",
+	libraryDependencies ++= ingotDependencies,
+  tutTargetDirectory := file("ingot"))).enablePlugins(TutPlugin)
 
-lazy val resultState = (project in file("state")).dependsOn(resultLib).settings(codeSettings, Seq(
-	name := "result-state",
-	libraryDependencies ++= resultStateDependencies,
+lazy val ingotState = (project in file("state")).dependsOn(ingotLib).settings(codeSettings, Seq(
+	name := "ingot-state",
+	libraryDependencies ++= ingotStateDependencies,
   tutTargetDirectory := file("state"))).enablePlugins(TutPlugin)
 
 val micrositeSettings = Seq(
-  micrositeName := "result",
+  micrositeName := "ingot",
   micrositeGithubOwner := "16s",
-  micrositeGithubRepo := "result",
+  micrositeGithubRepo := "ingot",
   micrositeGithubToken := sys.env.get("GITHUB_TOKEN"),
   micrositePushSiteWith := GitHub4s,
   micrositeHighlightTheme := "atelier-dune-light",
   micrositeGitterChannel := false,
-  micrositeBaseUrl := "/result")
+  micrositeBaseUrl := "/ingot")
 
 lazy val docs = (project in file("docs"))
-  .settings(sharedSettings, micrositeSettings, Seq(publishArtifact := false)).dependsOn(resultLib, resultState)
+  .settings(sharedSettings, micrositeSettings, Seq(publishArtifact := false)).dependsOn(ingotLib, ingotState)
   .enablePlugins(MicrositesPlugin)
 
 lazy val readme = (project in file("readme"))
-  .dependsOn(resultLib, resultState)
+  .dependsOn(ingotLib, ingotState)
   .settings(sharedSettings, Seq(publishArtifact := false), tutTargetDirectory := file("."))
   .enablePlugins(TutPlugin)
 
-lazy val result = (project in file("."))
+lazy val ingot = (project in file("."))
   .settings(sharedSettings, Seq(publishArtifact := false), tutTargetDirectory := file("."))
-  .aggregate(resultLib, resultState, docs, readme)
+  .aggregate(ingotLib, ingotState, docs, readme)
 
 
 
