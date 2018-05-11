@@ -60,4 +60,13 @@ object Brick {
 
   def log[F[_], L](x: Logs)(implicit A: Applicative[F]): Brick[F, L, Unit] =
     apply[F, L, Unit](s => A.pure(((s.combine(x), Either.right[L, Unit](())))))
+
+  def flushLogs[F[_], L](
+    logger: Logger[F])(
+    implicit
+    A: Applicative[F]): Brick[F, L, Unit] = Brick[F, L, Unit] { s =>
+    A.map(logger.log(s.logs)) { _ =>
+      (StateWithLogs.init(()), Either.right[L, Unit](()))
+    }
+  }
 }

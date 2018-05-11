@@ -134,4 +134,11 @@ object Ingot {
   def inspectFL[F[_], S, L, R](f: S => F[(Logs, Either[L, R])])(implicit A: Applicative[F]): Ingot[F, S, L, R] =
     apply[F, S, L, R](s => A.map(f(s.state)) { case (logs, r) => (s.combine(logs), r) })
 
+  def flushLogs[F[_], S, L](
+    logger: Logger[F])(
+    implicit
+    A: Applicative[F]): Ingot[F, S, L, Unit] = Ingot[F, S, L, Unit] { swl =>
+    A.map(logger.log(swl.logs))(_ => (StateWithLogs.init(swl.state), Either.right[L, Unit](())))
+  }
+
 }

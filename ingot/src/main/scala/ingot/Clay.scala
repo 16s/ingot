@@ -36,4 +36,9 @@ object Clay {
   def log[L](x: Logs): Clay[L, Unit] =
     apply[L, Unit](s => ((s.combine(x), Either.right[L, Unit](()))))
 
+  def flushLogs[L](logger: Logger[Id]): Clay[L, Unit] = Clay[L, Unit] { s =>
+    logger.log(s.logs)
+    (StateWithLogs.init(()), Either.right[L, Unit](()))
+  }
+
 }

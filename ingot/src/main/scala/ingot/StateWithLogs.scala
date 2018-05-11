@@ -27,5 +27,5 @@ final case class StateWithLogs[+S](logs: Logs, state: S) {
 }
 
 object StateWithLogs {
-  def init[S](s: S)(implicit M: cats.Monoid[Logs]): StateWithLogs[S] = StateWithLogs(cats.Monoid[Logs].empty, s)
+  def init[S](s: S): StateWithLogs[S] = StateWithLogs(cats.Monoid[Logs].empty, s)
 }
