@@ -1,3 +1,5 @@
+![Maven Central](https://maven-badges.herokuapp.com/maven-central/me.16s/ingot_2.12/badge.svg)
+
 ### Composable data structures for logging, error handling and flow control
 
 `result` is a small library that help you build composable programs.

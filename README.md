@@ -1,3 +1,5 @@
+![Maven Central](https://maven-badges.herokuapp.com/maven-central/me.16s/ingot_2.12/badge.svg)
+
 ### Composable data structures for logging, error handling and flow control
 
 `result` is a small library that help you build composable programs.
@@ -41,20 +43,20 @@ You can construct programs by calling the different materializers available for 
 
 ```scala
 scala> Clay.rightT[Int]("aaaa")
-res0: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@14bf8ac)
+res0: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@24239614)
 
 scala> Clay.leftT[String](5)
-res1: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@70989d80)
+res1: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@568e6f76)
 
 scala> Clay.lift(Either.right[Int, String]("b"))
-res2: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@1408dad6)
+res2: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@47cef8de)
 ```
 
 you can even use guards against `Exception`s, for example you can automatically convert `scala.util.Try` to `Clay`.
 
 ```scala
 scala> Clay.guard(scala.util.Try("aaa"))
-res3: ingot.Clay[Throwable,String] = EitherT(cats.data.IndexedStateT@3139c176)
+res3: ingot.Clay[Throwable,String] = EitherT(cats.data.IndexedStateT@2e0de6fa)
 ```
 
 There's also a special call that doesn't return a value but it adds a log message that can
@@ -65,7 +67,7 @@ scala> val program = for {
      |     _ <- Clay.log[Int]("this is a log message".asInfo)
      |     _ <- Clay.log[Int]("this is a second log message".asError)
      |     } yield ()
-program: cats.data.EitherT[[γ$0$]cats.data.IndexedStateT[cats.Id,ingot.StateWithLogs[Unit],ingot.StateWithLogs[Unit],γ$0$],Int,Unit] = EitherT(cats.data.IndexedStateT@1855c8ba)
+program: cats.data.EitherT[[γ$0$]cats.data.IndexedStateT[cats.Id,ingot.StateWithLogs[Unit],ingot.StateWithLogs[Unit],γ$0$],Int,Unit] = EitherT(cats.data.IndexedStateT@4a301de5)
 ```
 
 To be able to print the logs you need an implementation of the `Logger[F[_]]` typeclasse,
@@ -112,7 +114,7 @@ scala> val program2 = for {
      |     _ <- Clay.flushLogs[String](logger)
      |     _ <- Clay.log[String]("This will stay".asDebug)
      | } yield ()
-program2: cats.data.EitherT[[γ$0$]cats.data.IndexedStateT[cats.Id,ingot.StateWithLogs[Unit],ingot.StateWithLogs[Unit],γ$0$],String,Unit] = EitherT(cats.data.IndexedStateT@2fafac9a)
+program2: cats.data.EitherT[[γ$0$]cats.data.IndexedStateT[cats.Id,ingot.StateWithLogs[Unit],ingot.StateWithLogs[Unit],γ$0$],String,Unit] = EitherT(cats.data.IndexedStateT@703a1575)
 
 scala> program2.runAL()
 INFO: This will be flushed
