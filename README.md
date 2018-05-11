@@ -42,32 +42,39 @@ import ingot._
 You can construct programs by calling the different materializers available for `Clay`.
 
 ```scala
-scala> Clay.rightT[Int]("aaaa")
-res0: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@24239614)
+Clay.rightT[Int]("aaaa")
+Clay.leftT[String](5)
+Clay.lift(Either.right[Int, String]("b"))
+```
 
-scala> Clay.leftT[String](5)
-res1: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@568e6f76)
+if you want to access the end result of the program, you can simply run it by calling `runA` on them:
 
-scala> Clay.lift(Either.right[Int, String]("b"))
-res2: ingot.Clay[Int,String] = EitherT(cats.data.IndexedStateT@47cef8de)
+```scala
+scala> Clay.rightT[Int]("aaaa").runA()
+res3: Either[Int,String] = Right(aaaa)
+
+scala> Clay.leftT[String](5).runA()
+res4: Either[Int,String] = Left(5)
+
+scala> Clay.lift(Either.right[Int, String]("b")).runA()
+res5: Either[Int,String] = Right(b)
 ```
 
 you can even use guards against `Exception`s, for example you can automatically convert `scala.util.Try` to `Clay`.
 
 ```scala
-scala> Clay.guard(scala.util.Try("aaa"))
-res3: ingot.Clay[Throwable,String] = EitherT(cats.data.IndexedStateT@2e0de6fa)
+scala> Clay.guard(scala.util.Try("aaa")).runA()
+res6: Either[Throwable,String] = Right(aaa)
 ```
 
 There's also a special call that doesn't return a value but it adds a log message that can
 later be printed:
 
 ```scala
-scala> val program = for {
-     |     _ <- Clay.log[Int]("this is a log message".asInfo)
-     |     _ <- Clay.log[Int]("this is a second log message".asError)
-     |     } yield ()
-program: cats.data.EitherT[[γ$0$]cats.data.IndexedStateT[cats.Id,ingot.StateWithLogs[Unit],ingot.StateWithLogs[Unit],γ$0$],Int,Unit] = EitherT(cats.data.IndexedStateT@4a301de5)
+val program = for {
+    _ <- Clay.log[Int]("this is a log message".asInfo)
+    _ <- Clay.log[Int]("this is a second log message".asError)
+    } yield ()
 ```
 
 To be able to print the logs you need an implementation of the `Logger[F[_]]` typeclasse,
@@ -96,7 +103,7 @@ Now you can simply run:
 scala> program.flushLogs(logger).runA()
 INFO: this is a log message
 ERROR: this is a second log message
-res4: Either[Int,Unit] = Right(())
+res7: Either[Int,Unit] = Right(())
 ```
 
 And the program will execute, as a last step printing out the log. Alternatively you can use
@@ -114,13 +121,50 @@ scala> val program2 = for {
      |     _ <- Clay.flushLogs[String](logger)
      |     _ <- Clay.log[String]("This will stay".asDebug)
      | } yield ()
-program2: cats.data.EitherT[[γ$0$]cats.data.IndexedStateT[cats.Id,ingot.StateWithLogs[Unit],ingot.StateWithLogs[Unit],γ$0$],String,Unit] = EitherT(cats.data.IndexedStateT@703a1575)
+program2: cats.data.EitherT[[γ$0$]cats.data.IndexedStateT[cats.Id,ingot.StateWithLogs[Unit],ingot.StateWithLogs[Unit],γ$0$],String,Unit] = EitherT(cats.data.IndexedStateT@7333cb8a)
 
 scala> program2.runAL()
 INFO: This will be flushed
 ERROR: This will also be printed
-res5: (ingot.Logs, Either[String,Unit]) = (Vector(LogMessage(This will stay,Debug,Map())),Right(()))
+res8: (ingot.Logs, Either[String,Unit]) = (Vector(LogMessage(This will stay,Debug,Map())),Right(()))
 ```
+
+There are a few more ways to log things.
+
+You can log something only when it failed:
+
+```scala
+scala> Clay.leftT[String]("This is an error").leftLog("You will only see this if something is wrong".asError).flushLogs(logger).runAL()
+ERROR: You will only see this if something is wrong
+res9: (ingot.Logs, Either[String,String]) = (Vector(),Left(This is an error))
+
+scala> Clay.rightT[String]("This is fine").leftLog("You will only see this if something is wrong".asError).flushLogs(logger).runAL()
+res10: (ingot.Logs, Either[String,String]) = (Vector(),Right(This is fine))
+```
+
+Or when something went well:
+
+```scala
+scala> Clay.leftT[String]("This is an error").rightLog("You will only see this things go well".asInfo).flushLogs(logger).runAL()
+res11: (ingot.Logs, Either[String,String]) = (Vector(),Left(This is an error))
+
+scala> Clay.rightT[String]("This is fine").rightLog("You will only see this things go well".asInfo).flushLogs(logger).runAL()
+INFO: You will only see this things go well
+res12: (ingot.Logs, Either[String,String]) = (Vector(),Right(This is fine))
+```
+
+Or in either case:
+
+```scala
+scala> Clay.leftT[String]("This is an error").log("This will always be logged".asDebug).flushLogs(logger).runAL()
+DEBUG: This will always be logged
+res13: (ingot.Logs, Either[String,String]) = (Vector(),Left(This is an error))
+
+scala> Clay.rightT[String]("This is fine").log("This will always be logged".asDebug).flushLogs(logger).runAL()
+DEBUG: This will always be logged
+res14: (ingot.Logs, Either[String,String]) = (Vector(),Right(This is fine))
+```
+
 
 Here's a slightly more involved example of combining programs:
 
@@ -152,14 +196,14 @@ Then you can just run it:
 
 ```scala
 scala> service().runAL()
-res6: (ingot.Logs, Either[MyError,ValidatedMessage]) = (Vector(LogMessage(Loaded the response,Info,Map()), LogMessage(Got the checksum,Debug,Map())),Right(ValidatedMessage(a,5)))
+res15: (ingot.Logs, Either[MyError,ValidatedMessage]) = (Vector(LogMessage(Loaded the response,Info,Map()), LogMessage(Got the checksum,Debug,Map())),Right(ValidatedMessage(a,5)))
 ```
 
 or just the logs:
 
 ```scala
 scala> service().runL()
-res7: ingot.Logs = Vector(LogMessage(Loaded the response,Info,Map()), LogMessage(Got the checksum,Debug,Map()))
+res16: ingot.Logs = Vector(LogMessage(Loaded the response,Info,Map()), LogMessage(Got the checksum,Debug,Map()))
 ```
 
 If you want to mix in an effect monad you can switch to `Brick[F[_], L, R]`. `Clay` is a more specific version of `Brick`,

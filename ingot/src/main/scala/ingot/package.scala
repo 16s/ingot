@@ -76,6 +76,31 @@ package object ingot {
           }
       }
     }
+
+    def log(log: LogMessage)(implicit F: FlatMap[F], A: Applicative[F]): Ingot[F, S, L, R] = Ingot[F, S, L, R] { swl =>
+      A.map(run(swl.state)) {
+        case (logs, st, result) =>
+          (StateWithLogs(logs, st).combine(log), result)
+      }
+    }
+
+    def leftLog(log: LogMessage)(implicit F: FlatMap[F], A: Applicative[F]): Ingot[F, S, L, R] = Ingot[F, S, L, R] { swl =>
+      A.map(run(swl.state)) {
+        case (logs, st, err @ Left(_)) =>
+          (StateWithLogs(logs, st).combine(log), err)
+        case (logs, st, result) =>
+          (StateWithLogs(logs, st), result)
+      }
+    }
+
+    def rightLog(log: LogMessage)(implicit F: FlatMap[F], A: Applicative[F]): Ingot[F, S, L, R] = Ingot[F, S, L, R] { swl =>
+      A.map(run(swl.state)) {
+        case (logs, st, result @ Right(_)) =>
+          (StateWithLogs(logs, st).combine(log), result)
+        case (logs, st, err) =>
+          (StateWithLogs(logs, st), err)
+      }
+    }
   }
 
   implicit class BrickSyntax[F[_], L, R](x: Ingot[F, Unit, L, R]) {
@@ -97,15 +122,6 @@ package object ingot {
       case (l, Right(result)) => (l, success.consume(result))
       case (l, Left(err)) => (l, fail.consume(err))
     })
-
-    def flushLogs(logger: Logger[F])(implicit F: FlatMap[F], A: Applicative[F]): Brick[F, L, R] = Brick[F, L, R] { _ =>
-      F.flatMap(runAL()) {
-        case (logs, result) =>
-          F.map(logger.log(logs)) { _ =>
-            (StateWithLogs.init(()), result)
-          }
-      }
-    }
   }
 
   implicit class ClaySyntax[L, R](x: Ingot[Id, Unit, L, R]) {

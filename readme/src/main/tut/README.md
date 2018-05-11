@@ -41,22 +41,30 @@ import ingot._
 
 You can construct programs by calling the different materializers available for `Clay`.
 
-```tut
+```tut:silent
 Clay.rightT[Int]("aaaa")
 Clay.leftT[String](5)
 Clay.lift(Either.right[Int, String]("b"))
 ```
 
+if you want to access the end result of the program, you can simply run it by calling `runA` on them:
+
+```tut
+Clay.rightT[Int]("aaaa").runA()
+Clay.leftT[String](5).runA()
+Clay.lift(Either.right[Int, String]("b")).runA()
+```
+
 you can even use guards against `Exception`s, for example you can automatically convert `scala.util.Try` to `Clay`.
 
 ```tut
-Clay.guard(scala.util.Try("aaa"))
+Clay.guard(scala.util.Try("aaa")).runA()
 ```
 
 There's also a special call that doesn't return a value but it adds a log message that can
 later be printed:
 
-```tut
+```tut:silent
 val program = for {
     _ <- Clay.log[Int]("this is a log message".asInfo)
     _ <- Clay.log[Int]("this is a second log message".asError)
@@ -97,7 +105,7 @@ The `flushLogs` method also available as a method on the `Clay` object so it can
 existing programs. Even though it's not recommended since logging is a side effect but sometimes it is
 necessary:
 
-```tut
+```tut:silent
 val program2 = for {
     _ <- Clay.log[String]("This will be flushed".asInfo)
     _ <- Clay.log[String]("This will also be printed".asError)
@@ -106,6 +114,30 @@ val program2 = for {
 } yield ()
 program2.runAL()
 ```
+
+There are a few more ways to log things.
+
+You can log something only when it failed:
+
+```tut
+Clay.leftT[String]("This is an error").leftLog("You will only see this if something is wrong".asError).flushLogs(logger).runAL()
+Clay.rightT[String]("This is fine").leftLog("You will only see this if something is wrong".asError).flushLogs(logger).runAL()
+```
+
+Or when something went well:
+
+```tut
+Clay.leftT[String]("This is an error").rightLog("You will only see this things go well".asInfo).flushLogs(logger).runAL()
+Clay.rightT[String]("This is fine").rightLog("You will only see this things go well".asInfo).flushLogs(logger).runAL()
+```
+
+Or in either case:
+
+```tut
+Clay.leftT[String]("This is an error").log("This will always be logged".asDebug).flushLogs(logger).runAL()
+Clay.rightT[String]("This is fine").log("This will always be logged".asDebug).flushLogs(logger).runAL()
+```
+
 
 Here's a slightly more involved example of combining programs:
 
