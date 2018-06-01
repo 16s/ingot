@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-import cats.{ Applicative, FlatMap, Functor, ~> }
+import cats.{ Applicative, Eval, FlatMap, Functor, ~> }
 import cats.data.{ EitherT, StateT }
-import cats.Id
 
 import scala.language.higherKinds
 
@@ -27,7 +26,7 @@ package object ingot {
   type ActionType[F[_], S, L, R] = StateWithLogs[S] => F[(StateWithLogs[S], Either[L, R])]
   type Ingot[F[_], S, L, R] = EitherT[StateT[F, StateWithLogs[S], ?], L, R]
   type Brick[F[_], L, R] = Ingot[F, Unit, L, R]
-  type Clay[L, R] = Ingot[Id, Unit, L, R]
+  type Clay[L, R] = Ingot[Eval, Unit, L, R]
 
   implicit class IngotSyntax[F[_], S, L, R](x: Ingot[F, S, L, R]) {
     def run(st: S)(implicit F: FlatMap[F]): F[(Logs, S, Either[L, R])] =
@@ -124,15 +123,15 @@ package object ingot {
     })
   }
 
-  implicit class ClaySyntax[L, R](x: Ingot[Id, Unit, L, R]) {
+  implicit class ClaySyntax[L, R](x: Ingot[Eval, Unit, L, R]) {
     def runA(): Either[L, R] =
-      x.value.run(StateWithLogs.init(()))._2
+      x.value.run(StateWithLogs.init(())).value._2
 
     def runL(): Logs =
-      x.value.run(StateWithLogs.init(()))._1.logs
+      x.value.run(StateWithLogs.init(())).value._1.logs
 
     def runAL(): (Logs, Either[L, R]) = {
-      val (st, res) = x.value.run(StateWithLogs.init(()))
+      val (st, res) = x.value.run(StateWithLogs.init(())).value
       (st.logs, res)
     }
 
@@ -146,9 +145,9 @@ package object ingot {
       case (l, Left(err)) => (l, fail.consume(err))
     }
 
-    def flushLogs(logger: Logger[Id]): Clay[L, R] = Clay[L, R] { _ =>
+    def flushLogs(logger: Logger[Eval]): Clay[L, R] = Clay[L, R] { _ =>
       val (logs, result) = runAL()
-      logger.log(logs)
+      logger.log(logs).value
       (StateWithLogs.init(()), result)
     }
   }

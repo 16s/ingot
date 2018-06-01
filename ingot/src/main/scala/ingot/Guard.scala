@@ -27,10 +27,10 @@ trait Guard[F[_], G[_]] {
 object Guard {
   def apply[F[_], G[_]](implicit g: Guard[F, G]): Guard[F, G] = g
 
-  implicit val tryGuard: Guard[Try, cats.Id] = new Guard[Try, cats.Id] {
-    override def apply[A](x: Try[A]): cats.Id[Either[Throwable, A]] = x match {
-      case Failure(t) => Either.left[Throwable, A](t)
-      case Success(s) => Either.right[Throwable, A](s)
+  implicit val tryGuard: Guard[Try, cats.Eval] = new Guard[Try, cats.Eval] {
+    override def apply[A](x: Try[A]): cats.Eval[Either[Throwable, A]] = x match {
+      case Failure(t) => cats.Eval.now(Either.left[Throwable, A](t))
+      case Success(s) => cats.Eval.now(Either.right[Throwable, A](s))
     }
   }
 

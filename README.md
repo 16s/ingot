@@ -82,17 +82,17 @@ for example
 
 
 ```scala
-val logger = new Logger[cats.Id] {
+val logger = new Logger[cats.Eval] {
     private def printCtx(ctx: Map[String, String]): String =
         if (ctx.isEmpty) ""
         else ctx.map({case (k, v) => s"$k: $v"}).mkString("\n", "\n", "")
 
-    override def log(x: Logs) = x.map { // Logs is just an alias for Vector[LogMessage]
+    override def log(x: Logs): cats.Eval[Unit] = cats.Eval.now(x.map { // Logs is just an alias for Vector[LogMessage]
         case LogMessage(msg, LogLevel.Error, ctx) => println(s"ERROR: $msg${printCtx(ctx)}") 
         case LogMessage(msg, LogLevel.Warning, ctx) => println(s"WARNING: $msg${printCtx(ctx)}") 
         case LogMessage(msg, LogLevel.Info, ctx) => println(s"INFO: $msg${printCtx(ctx)}") 
         case LogMessage(msg, LogLevel.Debug, ctx) => println(s"DEBUG: $msg${printCtx(ctx)}") 
-    }
+    })
 }
 
 ```
@@ -115,18 +115,13 @@ existing programs. Even though it's not recommended since logging is a side effe
 necessary:
 
 ```scala
-scala> val program2 = for {
-     |     _ <- Clay.log[String]("This will be flushed".asInfo)
-     |     _ <- Clay.log[String]("This will also be printed".asError)
-     |     _ <- Clay.flushLogs[String](logger)
-     |     _ <- Clay.log[String]("This will stay".asDebug)
-     | } yield ()
-program2: cats.data.EitherT[[γ$0$]cats.data.IndexedStateT[cats.Id,ingot.StateWithLogs[Unit],ingot.StateWithLogs[Unit],γ$0$],String,Unit] = EitherT(cats.data.IndexedStateT@7333cb8a)
-
-scala> program2.runAL()
-INFO: This will be flushed
-ERROR: This will also be printed
-res8: (ingot.Logs, Either[String,Unit]) = (Vector(LogMessage(This will stay,Debug,Map())),Right(()))
+val program2 = for {
+    _ <- Clay.log[String]("This will be flushed".asInfo)
+    _ <- Clay.log[String]("This will also be printed".asError)
+    _ <- Clay.flushLogs[String](logger)
+    _ <- Clay.log[String]("This will stay".asDebug)
+} yield ()
+program2.runAL()
 ```
 
 There are a few more ways to log things.
@@ -210,8 +205,8 @@ If you want to mix in an effect monad you can switch to `Brick[F[_], L, R]`. `Cl
 basically
 
 ```scala
-import cats.Id
-type Clay[L, R] = Brick[Id, L, R]
+import cats.Eval
+type Clay[L, R] = Brick[Eval, L, R]
 ```
 
 so everything that has a `Clay` data type will work with everything that is a `Brick`. `Brick` can be created the same

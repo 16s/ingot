@@ -76,17 +76,17 @@ for example
 
 
 ```tut:silent
-val logger = new Logger[cats.Id] {
+val logger = new Logger[cats.Eval] {
     private def printCtx(ctx: Map[String, String]): String =
         if (ctx.isEmpty) ""
         else ctx.map({case (k, v) => s"$k: $v"}).mkString("\n", "\n", "")
 
-    override def log(x: Logs) = x.map { // Logs is just an alias for Vector[LogMessage]
+    override def log(x: Logs): cats.Eval[Unit] = cats.Eval.now(x.map { // Logs is just an alias for Vector[LogMessage]
         case LogMessage(msg, LogLevel.Error, ctx) => println(s"ERROR: $msg${printCtx(ctx)}") 
         case LogMessage(msg, LogLevel.Warning, ctx) => println(s"WARNING: $msg${printCtx(ctx)}") 
         case LogMessage(msg, LogLevel.Info, ctx) => println(s"INFO: $msg${printCtx(ctx)}") 
         case LogMessage(msg, LogLevel.Debug, ctx) => println(s"DEBUG: $msg${printCtx(ctx)}") 
-    }
+    })
 }
 
 ```
@@ -181,8 +181,8 @@ If you want to mix in an effect monad you can switch to `Brick[F[_], L, R]`. `Cl
 basically
 
 ```scala
-import cats.Id
-type Clay[L, R] = Brick[Id, L, R]
+import cats.Eval
+type Clay[L, R] = Brick[Eval, L, R]
 ```
 
 so everything that has a `Clay` data type will work with everything that is a `Brick`. `Brick` can be created the same
