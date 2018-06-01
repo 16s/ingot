@@ -165,20 +165,20 @@ def service(): Clay[MyError, ValidatedMessage] = {
 ```
 
 
-Then you can just run it:
+Then you can just run `runAL` to get the results:
 
 ```tut
 service().runAL()
 ```
 
-or just the logs:
+or `runL` to only return the logs:
 
 ```tut
 service().runL()
 ```
 
-If you want to mix in an effect monad you can switch to `Brick[F[_], L, R]`. `Clay` is a more specific version of `Brick`,
-basically
+If you want to mix in an effect monad you can switch to `Brick[F[_], L, R]`. `Clay` is simply a version of `Brick`,
+where the effect monad is fixed to `Eval`, cat's stack safe synchronous effect monad.  
 
 ```scala
 import cats.Eval
