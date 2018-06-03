@@ -6,15 +6,16 @@ import cats.syntax.either._
 
 object Clay {
   outer =>
-  def pure[L, R](x: R): Clay[L, R] = rightT(x)
-
-  def apply[L, R](
-    x: StateWithLogs[Unit] => (StateWithLogs[Unit], Either[L, R])): Clay[L, R] =
-    EitherT[StateT[Eval, StateWithLogs[Unit], ?], L, R](StateT[Eval, StateWithLogs[Unit], Either[L, R]](x.andThen(Eval.now)))
 
   final class RightTPartiallyApplied[L] {
     def apply[R](x: R): Clay[L, R] = outer.apply[L, R](s => (s, Either.right[L, R](x)))
   }
+
+  def pure[L] = new RightTPartiallyApplied[L]
+
+  def apply[L, R](
+    x: StateWithLogs[Unit] => (StateWithLogs[Unit], Either[L, R])): Clay[L, R] =
+    EitherT[StateT[Eval, StateWithLogs[Unit], ?], L, R](StateT[Eval, StateWithLogs[Unit], Either[L, R]](x.andThen(Eval.now)))
 
   def rightT[L] = new RightTPartiallyApplied[L]
 

@@ -23,7 +23,12 @@ import cats.syntax.either._
 object Rebar {
   outer =>
 
-  def pure[S, L, R](x: R): Rebar[S, L, R] = rightT(x)
+  final class RightTPartiallyApplied[S, L] {
+    def apply[R](x: R): Rebar[S, L, R] =
+      outer.apply[S, L, R](s => (s, Either.right[L, R](x)))
+  }
+
+  def pure[S, L] = new RightTPartiallyApplied[S, L]
 
   def apply[S, L, R](
     x: StateWithLogs[S] => (StateWithLogs[S], Either[L, R])): Rebar[S, L, R] =
@@ -33,11 +38,13 @@ object Rebar {
     x: StateWithLogs[S] => Eval[(StateWithLogs[S], Either[L, R])]): Rebar[S, L, R] =
     EitherT[StateT[Eval, StateWithLogs[S], ?], L, R](StateT(x))
 
-  def rightT[S, L, R](x: R): Rebar[S, L, R] =
-    apply[S, L, R](s => (s, Either.right[L, R](x)))
+  def rightT[S, L] = new RightTPartiallyApplied[S, L]
 
-  def leftT[S, L, R](x: L): Rebar[S, L, R] =
-    apply[S, L, R](s => (s, Either.left[L, R](x)))
+  final class LeftTPartiallApplied[S, R] {
+    def apply[L](x: L): Rebar[S, L, R] =
+      outer.apply[S, L, R](s => (s, Either.left[L, R](x)))
+  }
+  def leftT[S, R] = new LeftTPartiallApplied[S, R]
 
   final class LiftPartiallyApplied[S] {
     def apply[L, R](x: Either[L, R]): Rebar[S, L, R] =
@@ -65,11 +72,18 @@ object Rebar {
   def getL[S, L]: Rebar[S, L, Logs] =
     apply[S, L, Logs](s => (s, Either.right[L, Logs](s.logs)))
 
-  def set[S, L](x: S): Rebar[S, L, Unit] =
-    apply[S, L, Unit](s => ((s.copy(state = x), Either.right[L, Unit](()))))
+  final class SetPartiallyApplied[L] {
+    def apply[S](x: S): Rebar[S, L, Unit] =
+      outer.apply[S, L, Unit](s => ((s.copy(state = x), Either.right[L, Unit](()))))
+  }
+  def set[L] = new SetPartiallyApplied[L]
 
-  def modify[S, L](f: S => S): Rebar[S, L, Unit] =
-    apply[S, L, Unit](s => ((s.copy(state = f(s.state)), Either.right[L, Unit](()))))
+  final class ModifyPartiallyApplied[L] {
+    def apply[S](f: S => S): Rebar[S, L, Unit] =
+      outer.apply[S, L, Unit](s => ((s.copy(state = f(s.state)), Either.right[L, Unit](()))))
+  }
+
+  def modify[L] = new ModifyPartiallyApplied[L]
 
   def inspect[S, L, R](f: S => Either[L, R]): Rebar[S, L, R] =
     apply[S, L, R](s => (s, f(s.state)))

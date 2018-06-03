@@ -31,7 +31,7 @@ object Implementation {
 
   implicit val testClient = new Client[ClientState] {
     def fetch(url: String): Ingot[Future, ClientState, String, Response] =
-      Ingot.pure[Future, ClientState, String, Response](Response(s"url:$url"))
+      Ingot.pure[Future, ClientState, String](Response(s"url:$url"))
   }
 
 }

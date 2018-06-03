@@ -7,7 +7,12 @@ import cats.syntax.either._
 object Brick {
   outer =>
 
-  def pure[F[_], L, R](x: R)(implicit A: Applicative[F]): Brick[F, L, R] = rightT(x)
+  final class RightTPartiallyApplied[F[_], L] {
+    def apply[R](x: R)(implicit A: Applicative[F]): Brick[F, L, R] =
+      outer.apply[F, L, R](s => A.pure((s, Either.right[L, R](x))))
+  }
+
+  def pure[F[_], L] = new RightTPartiallyApplied[F, L]
 
   def apply[F[_], L, R](
     x: StateWithLogs[Unit] => F[(StateWithLogs[Unit], Either[L, R])])(
@@ -16,11 +21,6 @@ object Brick {
     EitherT[StateT[F, StateWithLogs[Unit], ?], L, R](StateT(x))
 
   def liftF[L] = new RightPartiallyApplied[L]
-
-  final class RightTPartiallyApplied[F[_], L] {
-    def apply[R](x: R)(implicit A: Applicative[F]): Brick[F, L, R] =
-      outer.apply[F, L, R](s => A.pure((s, Either.right[L, R](x))))
-  }
 
   def rightT[F[_], L] = new RightTPartiallyApplied[F, L]
 

@@ -56,21 +56,21 @@ class IngotSpec extends FlatSpec {
 
   "Rebar" should "correctly compose" in {
     (for {
-      a <- Rebar.rightT[SimpleState, Int, String]("a")
-      b <- Rebar.rightT[SimpleState, Int, String]("b")
+      a <- Rebar.rightT[SimpleState, Int]("a")
+      b <- Rebar.rightT[SimpleState, Int]("b")
     } yield a + b).runA(SimpleState.empty) shouldBe Right("ab")
   }
 
   type SimpleTestResult = Ingot[Eval, SimpleState, String, Int]
   "Ingot" should "correctly map" in {
     val res: SimpleTestResult = for {
-      x <- Ingot.rightT[Eval, SimpleState, String, Int](5)
+      x <- Ingot.rightT[Eval, SimpleState, String](5)
       _ <- Ingot.log[Eval, SimpleState, String]("This log message is ignored for now".asInfo)
-      y <- Ingot.rightT[Eval, SimpleState, String, Int](3)
+      y <- Ingot.rightT[Eval, SimpleState, String](3)
     } yield x + y
 
     val result: Either[String, Int] = res.runA(SimpleState.empty)
-    result should equal(Right(8))
+    result shouldBe Right(8)
   }
 
   it should "correctly collect logs" in {
@@ -88,8 +88,8 @@ class IngotSpec extends FlatSpec {
     val res: SimpleTestResult = for {
       _ <- Ingot.log[Eval, SimpleState, String]("Starting off".asInfo)
       st <- Ingot.get[Eval, SimpleState, String]
-      _ <- Ingot.set[Eval, SimpleState, String](SimpleState(st.id * 2))
-      _ <- Ingot.modify[Eval, SimpleState, String]((x: SimpleState) => SimpleState(x.id + 3))
+      _ <- Ingot.set[Eval, String](SimpleState(st.id * 2))
+      _ <- Ingot.modify[Eval, String]((x: SimpleState) => SimpleState(x.id + 3))
       st <- Ingot.get[Eval, SimpleState, String]
     } yield st.id
     val result: SimpleState = res.runS(SimpleState(1))

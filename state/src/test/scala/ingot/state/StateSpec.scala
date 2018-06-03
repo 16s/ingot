@@ -38,7 +38,6 @@ trait HttpClient {
 final case class CombinedState(c: DbConnection, h: HttpClient)
 
 class StateSpec extends FlatSpec {
-
   private def getIdFromDb(id: Int): Ingot[Id, DbConnection, String, String] = Ingot.pure(s"id:${id.toString}")
 
   private def getDataFromApi(url: String): Ingot[Id, HttpClient, String, String] = Ingot.pure(s"url:$url")
@@ -76,5 +75,4 @@ class StateSpec extends FlatSpec {
     val result = Await.result(TestService.run[ParserState, ClientState, (ParserState, ClientState)]("a").runA((ParserState(), ClientState())), Duration.Inf)
     result should equal(Right(Response("url:parsed:a")))
   }
-
 }

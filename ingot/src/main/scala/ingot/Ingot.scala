@@ -7,7 +7,12 @@ import cats.syntax.either._
 object Ingot {
   outer =>
 
-  def pure[F[_], S, L, R](x: R)(implicit A: Applicative[F]): Ingot[F, S, L, R] = rightT(x)
+  final class RightTPartiallyApplied[F[_], S, L] {
+    def apply[R](x: R)(implicit A: Applicative[F]): Ingot[F, S, L, R] =
+      outer.apply[F, S, L, R](st => A.pure((st, Either.right[L, R](x))))
+  }
+
+  def pure[F[_], S, L] = new RightTPartiallyApplied[F, S, L]
 
   def apply[F[_], S, L, R](
     x: StateWithLogs[S] => F[(StateWithLogs[S], Either[L, R])])(
@@ -15,18 +20,21 @@ object Ingot {
     A: Applicative[F]): Ingot[F, S, L, R] =
     EitherT[StateT[F, StateWithLogs[S], ?], L, R](StateT(x))
 
-  def liftF[F[_], S, L, R](x: F[R])(implicit A: Applicative[F]): Ingot[F, S, L, R] = right(x)
-
-  def rightT[F[_], S, L, R](x: R)(implicit A: Applicative[F]): Ingot[F, S, L, R] =
-    apply[F, S, L, R](s => A.pure((s, Either.right[L, R](x))))
-
-  def leftT[F[_], S, L, R](x: L)(implicit A: Applicative[F]): Ingot[F, S, L, R] =
-    apply[F, S, L, R](s => A.pure((s, Either.left[L, R](x))))
-
   final class RightPartiallyApplied[S, L] {
     def apply[F[_], R](x: F[R])(implicit A: Applicative[F]): Ingot[F, S, L, R] =
       outer.apply[F, S, L, R](s => A.map(x)(x => (s, Either.right[L, R](x))))
   }
+
+  def liftF[S, L] = new RightPartiallyApplied[S, L]
+
+  def rightT[F[_], S, L] = new RightTPartiallyApplied[F, S, L]
+
+  final class LeftTPartiallyApplied[F[_], S, R] {
+    def apply[L](x: L)(implicit A: Applicative[F]): Ingot[F, S, L, R] =
+      outer.apply[F, S, L, R](s => A.pure((s, Either.left[L, R](x))))
+  }
+
+  def leftT[F[_], S, R] = new LeftTPartiallyApplied[F, S, R]
 
   def right[S, L] = new RightPartiallyApplied[S, L]
 
@@ -63,8 +71,11 @@ object Ingot {
   def getL[F[_], S, L](implicit A: Applicative[F]): Ingot[F, S, L, Logs] =
     apply[F, S, L, Logs](s => A.pure((s, Either.right[L, Logs](s.logs))))
 
-  def set[F[_], S, L](x: S)(implicit A: Applicative[F]): Ingot[F, S, L, Unit] =
-    apply[F, S, L, Unit](s => A.pure(((s.copy(state = x), Either.right[L, Unit](())))))
+  final class SetPartiallyApplied[F[_], L] {
+    def apply[S](x: S)(implicit A: Applicative[F]): Ingot[F, S, L, Unit] =
+      outer.apply[F, S, L, Unit](s => A.pure(((s.copy(state = x), Either.right[L, Unit](())))))
+  }
+  def set[F[_], L] = new SetPartiallyApplied[F, L]
 
   final class SetFPartiallyApplied[L] {
     def apply[F[_], S](x: F[S])(implicit A: Applicative[F]): Ingot[F, S, L, Unit] =
@@ -73,8 +84,11 @@ object Ingot {
 
   def setF[L] = new SetFPartiallyApplied[L]
 
-  def modify[F[_], S, L](f: S => S)(implicit A: Applicative[F]): Ingot[F, S, L, Unit] =
-    apply[F, S, L, Unit](s => A.pure(((s.copy(state = f(s.state)), Either.right[L, Unit](())))))
+  final class ModifyPartiallyApplied[F[_], L] {
+    def apply[S](f: S => S)(implicit A: Applicative[F]): Ingot[F, S, L, Unit] =
+      outer.apply[F, S, L, Unit](s => A.pure(((s.copy(state = f(s.state)), Either.right[L, Unit](())))))
+  }
+  def modify[F[_], L] = new ModifyPartiallyApplied[F, L]
 
   final class ModifyFPartiallyApplied[L] {
     def apply[F[_], S](f: S => F[S])(implicit A: Applicative[F]): Ingot[F, S, L, Unit] =
