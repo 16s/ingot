@@ -83,12 +83,12 @@ object Ingot {
 
   def modifyF[L] = new ModifyFPartiallyApplied[L]
 
-  final class InspectPartiallyApplied[L] {
-    def apply[F[_], S, R](f: S => Either[L, R])(implicit A: Applicative[F]): Ingot[F, S, L, R] =
+  final class InspectPartiallyApplied[F[_]] {
+    def apply[S, L, R](f: S => Either[L, R])(implicit A: Applicative[F]): Ingot[F, S, L, R] =
       outer.apply[F, S, L, R](s => A.pure((s, f(s.state))))
   }
 
-  def inspect[L] = new InspectPartiallyApplied[L]
+  def inspect[F[_]] = new InspectPartiallyApplied[F]
 
   final class InspectEPartiallyApplied[F[_], L] {
     def apply[S, R](f: S => R)(implicit A: Applicative[F]): Ingot[F, S, L, R] =

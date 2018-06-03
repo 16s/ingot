@@ -16,7 +16,7 @@
 
 package ingot
 
-import cats.Id
+import cats.Eval
 import org.scalatest._
 import Matchers._
 import cats.syntax.either._
@@ -54,12 +54,19 @@ class IngotSpec extends FlatSpec {
     } yield a + b).runA() should equal(Right("ab"))
   }
 
-  type SimpleTestResult = Ingot[Id, SimpleState, String, Int]
+  "Rebar" should "correctly compose" in {
+    (for {
+      a <- Rebar.rightT[SimpleState, Int, String]("a")
+      b <- Rebar.rightT[SimpleState, Int, String]("b")
+    } yield a + b).runA(SimpleState.empty) shouldBe Right("ab")
+  }
+
+  type SimpleTestResult = Ingot[Eval, SimpleState, String, Int]
   "Ingot" should "correctly map" in {
     val res: SimpleTestResult = for {
-      x <- Ingot.rightT(5)
-      _ <- Ingot.log("This log message is ignored for now".asInfo)
-      y <- Ingot.rightT(3)
+      x <- Ingot.rightT[Eval, SimpleState, String, Int](5)
+      _ <- Ingot.log[Eval, SimpleState, String]("This log message is ignored for now".asInfo)
+      y <- Ingot.rightT[Eval, SimpleState, String, Int](3)
     } yield x + y
 
     val result: Either[String, Int] = res.runA(SimpleState.empty)
@@ -68,9 +75,9 @@ class IngotSpec extends FlatSpec {
 
   it should "correctly collect logs" in {
     val res: SimpleTestResult = for {
-      _ <- Ingot.log("Something".asInfo)
-      _ <- Ingot.log("Something else".asInfo)
-      _ <- Ingot.log(Vector("3rd log".asDebug, "4th log".asInfo))
+      _ <- Ingot.log[Eval, SimpleState, String]("Something".asInfo)
+      _ <- Ingot.log[Eval, SimpleState, String]("Something else".asInfo)
+      _ <- Ingot.log[Eval, SimpleState, String](Vector("3rd log".asDebug, "4th log".asInfo))
     } yield 5
 
     val result: Logs = res.runL(SimpleState.empty)
@@ -79,11 +86,11 @@ class IngotSpec extends FlatSpec {
 
   it should "correctly transform the state" in {
     val res: SimpleTestResult = for {
-      _ <- Ingot.log[Id, SimpleState, String]("Starting off".asInfo)
-      st <- Ingot.get
-      _ <- Ingot.set(SimpleState(st.id * 2))
-      _ <- Ingot.modify((x: SimpleState) => SimpleState(x.id + 3))
-      st <- Ingot.get
+      _ <- Ingot.log[Eval, SimpleState, String]("Starting off".asInfo)
+      st <- Ingot.get[Eval, SimpleState, String]
+      _ <- Ingot.set[Eval, SimpleState, String](SimpleState(st.id * 2))
+      _ <- Ingot.modify[Eval, SimpleState, String]((x: SimpleState) => SimpleState(x.id + 3))
+      st <- Ingot.get[Eval, SimpleState, String]
     } yield st.id
     val result: SimpleState = res.runS(SimpleState(1))
     result should equal(SimpleState(5))
@@ -91,12 +98,12 @@ class IngotSpec extends FlatSpec {
 
   it should "correctly use inspects" in {
     val res: SimpleTestResult = for {
-      _ <- Ingot.inspect[String]((st: SimpleState) => Either.right[String, String](""): Id[Either[String, String]])
-      _ <- Ingot.inspectE((st: SimpleState) => st.id)
-      _ <- Ingot.inspectF[Id, SimpleState, String, Int]((st: SimpleState) => Either.right[String, Int](st.id))
-      _ <- Ingot.inspectL((st: SimpleState) => (Vector.empty[LogMessage], Either.right[String, String]("")))
-      _ <- Ingot.inspectEL((st: SimpleState) => (Vector.empty[LogMessage], ""))
-      _ <- Ingot.inspectFL[Id, SimpleState, String, String]((st: SimpleState) => (Vector.empty[LogMessage], Either.right[String, String]("")))
+      _ <- Ingot.inspect[Eval]((_: SimpleState) => Either.right[String, String](""))
+      _ <- Ingot.inspectE[Eval, String]((st: SimpleState) => st.id)
+      _ <- Ingot.inspectF[Eval, SimpleState, String, Int]((st: SimpleState) => Eval.now(Either.right[String, Int](st.id)))
+      _ <- Ingot.inspectL[Eval]((_: SimpleState) => (Vector.empty[LogMessage], Either.right[String, String]("")))
+      _ <- Ingot.inspectEL[Eval, String]((_: SimpleState) => (Vector.empty[LogMessage], ""))
+      _ <- Ingot.inspectFL((_: SimpleState) => Eval.now((Vector.empty[LogMessage], Either.right[String, String](""))))
     } yield 5
     val result: Either[String, Int] = res.runA(SimpleState(1))
     result should equal(Either.right[String, Int](5))
@@ -116,11 +123,11 @@ class IngotSpec extends FlatSpec {
   implicit val httpCompositeState =
     CompositeState.instance[HttpClient, (DbConnection, HttpClient)](_._2, { case (x, y) => (x._1, y) })
 
-  private def getIdFromDb(id: Int): Ingot[Id, DbConnection, String, String] = Ingot.pure(s"id:${id.toString}")
+  private def getIdFromDb(id: Int): Ingot[Eval, DbConnection, String, String] = Ingot.pure(s"id:${id.toString}")
 
-  private def getDataFromApi(url: String): Ingot[Id, HttpClient, String, String] = Ingot.pure(s"url:$url")
+  private def getDataFromApi(url: String): Ingot[Eval, HttpClient, String, String] = Ingot.pure(s"url:$url")
 
-  private def getFromDbAndApi: Ingot[Id, (DbConnection, HttpClient), String, String] = {
+  private def getFromDbAndApi: Ingot[Eval, (DbConnection, HttpClient), String, String] = {
     for {
       id <- getIdFromDb(5).transformS[(DbConnection, HttpClient)]
       url <- getDataFromApi("http://localhost").transformS[(DbConnection, HttpClient)]
@@ -148,7 +155,7 @@ class IngotSpec extends FlatSpec {
   it should "use guards" in {
     val ex = new Exception("error")
     val failed: Try[String] = scala.util.Failure(ex)
-    val result = Ingot.guard[Id, Unit](failed).runA()
+    val result = Ingot.guard[Eval, Unit](failed).runA()
     result should equal(Left(ex))
   }
 }

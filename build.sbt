@@ -69,6 +69,7 @@ val sharedSettings = Seq(
   organizationName := "Tamas Neltz",
   scalaVersion := "2.12.6",
   scalacOptions in Compile ++= compilerOptions(scalaVersion.value),
+  scalacOptions in Test ++= compilerOptions(scalaVersion.value),
   scalacOptions in Tut := Seq(),
   scalariformPreferences := scalariformPreferences.value,
   scalacOptions in doc ++= Seq("-groups", "-implicits"),
